@@ -18,6 +18,18 @@
     match))
 
 
+;; ;; return true if number is like 4242 1010 11 111333 145145
+;; altenative with more math :)
+;; (defn is-symmetrical? [str_number]
+;;   (let [half_char_count (/ (count str_number) 2)
+;;         number (js/parseInt str_number)
+;;         multiplier (Math/pow 10 half_char_count)
+;;         begin (quot number multiplier)
+;;         end (mod number multiplier)
+;;         match (= begin end)]
+;;     match))
+
+
 ;; return true if number pass santa's special criteria
 (defn is-special-number? [number]
   (let [str_number (str number)

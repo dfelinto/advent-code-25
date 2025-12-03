@@ -12,3 +12,7 @@ Follow the guide here: https://clojure.org/guides/install_clojure
 ```bash
 clj -M -m cljs.main --target node --output-to day1.js -c day1.core  && node day1.js
 ```
+
+## Challenges
+[x] Day 1.1
+[x] Day 1.2

@@ -1,6 +1,10 @@
 (ns day1.core
   (:require ["fs" :as fs]
-            ["path" :as path]))
+            ["path" :as path]
+            [clojure.string :as str]))
+
+(def INPUT_FILE "../../inputs/day1.txt")
+(def TEST_FILE "../../tests/inputs/test-day1.txt")
 
 
 ;; need a function that takes:
@@ -8,28 +12,38 @@
 ;; export number
 
 
-(defn numbers-from-file [filepath]
+
+
+(defn numbers-from-file [filepath callback]
   (js/console.log js/__dirname)
-  (let [abs-filepath (path/join js/__dirname filepath)]
-    (println "Reading numbers from file:" abs-filepath)
-    (fs/readFile abs-filepath "utf8"
+  (let [abs_filepath (path/join js/__dirname filepath)]
+    (println "Reading numbers from file:" abs_filepath)
+    ;; use the synchronous so the data returns right away
+    (fs/readFile abs_filepath "utf8"
                  (fn [err data]
                    (if err (js/console.error "Error loading file!")
-                       data)))))
+                       (callback (str/split-lines data)))))))
+
 
 
 (defn crack-the-code [filepath]
-  (let [numbers (numbers-from-file filepath)]
-    numbers))
+  (let [position_initial 50
+        count 0
+        position_cur position_initial]
+    (numbers-from-file filepath
+                       (fn [lines]
+                         (doseq [line lines]
+                           (println line position_initial))))
+    count))
 
 
 (defn main []
-  (let [result (crack-the-code "../../inputs/day1.txt")]
+  (let [result (crack-the-code INPUT_FILE)]
     (println "Result for day 1 is: " result)))
 
 
 (defn testing []
-  (let [result (crack-the-code "../../tests/inputs/test-day1.txt")]
+  (let [result (crack-the-code TEST_FILE)]
     (= result 3)))
 
 (if (testing)

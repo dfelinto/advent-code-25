@@ -18,25 +18,6 @@
                        (callback (str/split-lines data)))))))
 
 
-;; L68
-;; L30
-;; R48
-;; L5
-;; R60
-;; L55
-;; L1
-;; L99
-;; R14
-;; L82
-
-;; (println (str/starts-with? s "L"))  ;; Output: true
-
-;; (let [[dir & rest-chars] s
-;;       value (apply str rest-chars)]
-;;   (println "Direction:" dir)
-;;   (println "Value:" value))
-
-
 ;; return direction (L or R) and the value
 (defn decompose-line [line]
   (let [[direction & rest-chars] line

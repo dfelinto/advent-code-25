@@ -29,14 +29,28 @@
 ;; R=Right means positive numbers
 ;; L=Left means negative numbers
 (defn value-from-line [line]
-  (let [[direction value] (decompose-line line)]
+  (let [[direction raw_value] (decompose-line line)]
     ;; I need to multiple by 1 when R rotation so
     ;; the string gets converted to a number
-    (if (= direction "L") (* -1 value) (* 1 value))))
+    (if (= direction "L") (* -1 raw_value) (* 1 raw_value))))
 
 
-(defn rotate-dial [position offset]
-  (mod (+ position offset) 100))
+;; Count everytime the dial ends or passthrough the 0
+;;
+;; My approach is to pretend the dial starts at zero.
+;;
+;; When the offset is positive, it means adding the count to the offset since the pointer
+;; has to first get to the current position, to then continue with the offset.
+;;
+;; For the negative offsets, I flip the dial. This means we flip the offset (-) and make
+;; the position to be subtracted from 100. The modulus is important in this case to prevent
+;; 100 - 0 to end up as 100.
+;;
+(defn rotate-dial [position {:keys [offset, count]}]
+  (let [delta (if (pos? offset) (+ position offset) (- (mod (- 100 position) 100) offset))
+        turns (quot delta 100)]
+    (swap! count + turns)
+    (mod (+ position offset) 100)))
 
 
 (defn crack-the-code [filepath callback]
@@ -46,25 +60,22 @@
     (numbers-from-file filepath
                        (fn [lines]
                          (doseq [line lines]
-                           (swap! position_cur rotate-dial (value-from-line line))
-                           ;; Increase count everytime the dial is on 0
-                           (when (= 0 @position_cur)
-                             (swap! count inc)))
+                           (swap! position_cur rotate-dial {:offset (value-from-line line) :count count}))
                          (callback @count)))))
 
 
 (defn main []
   (crack-the-code INPUT_FILE
                   (fn [result]
-                    (println "Result for day 1.2:" result))))
+                    (println "Result for day 1:" result))))
 
 
 (defn testing []
   (crack-the-code TEST_FILE
                   (fn [result]
-                    (if (= result 3)
+                    (if (= result 6)
                       (main)
-                      (println "Test failed:" result "(expected 3)")))))
+                      (println "Test failed:" result "(expected 6)")))))
 
 
 

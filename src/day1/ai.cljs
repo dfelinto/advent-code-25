@@ -40,7 +40,7 @@
             [clojure.string :as str]))
 
 (def INPUT_FILE "../../inputs/day1.txt")
-(def TEST_FILE "../../tests/inputs/test-day1.txt")
+(def TEST_FILE "../../inputs/day1-test.txt")
 
 ;; ---- File reading ----
 (defn numbers-from-file [filepath]

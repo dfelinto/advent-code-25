@@ -1,4 +1,4 @@
-(ns day2.core
+(ns day2-2.core
   (:require ["fs" :as fs]
             ["path" :as path]
             [clojure.string :as str]))
@@ -59,11 +59,11 @@
 
 ;; ---- CLI / Test ----
 (defn main []
-  (println "Result for day 2:" (crack-the-code INPUT_FILE)))
+  (println "Result for day 2.2:" (crack-the-code INPUT_FILE)))
 
 (defn testing []
   (let [result (crack-the-code TEST_FILE)
-        expected 1227775554]
+        expected 12312312323]
     (if (= result expected)
       (main)
       (println (str "Test failed: " result " (expected " expected ")")))))

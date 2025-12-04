@@ -17,4 +17,4 @@ clj -M -m cljs.main --target node --output-to day1.js -c day1.core  && node day1
 [x] Day 1.1
 [x] Day 1.2
 [x] Day 2.1
-[ ] Day 2.2
+[x] Day 2.2

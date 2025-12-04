@@ -8,15 +8,6 @@
 (def DEBUG_FILE "../../inputs/day2-test-debug.txt")
 
 
-;; return true if number is like 4242 1010 11 111333 145145
-(defn is-symmetrical? [number]
-  (let [half_char_count (/ (count number) 2)
-        begin (subs number 0 half_char_count)
-        end (subs number half_char_count)
-        match (= begin end)]
-    match))
-
-
 ;; return true if number pass santa's special criteria
 ;; larger number: 4444553231
 ;; #chars 10

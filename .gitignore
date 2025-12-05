@@ -1,0 +1,10 @@
+/.clj-kondo/
+/.cljs_node_repl/
+/.cpcache/
+/.lsp/
+/.vscode/
+/node_modules/
+/out.js
+/out/
+/package-lock.json
+/package.json

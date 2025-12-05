@@ -5,8 +5,9 @@
 
 (def INPUT_FILE "../../inputs/day3.txt")
 (def TEST_FILE "../../inputs/day3-test.txt")
+;; (def TEST_FILE "../../inputs/day3-test-debug.txt")
 
-(def MAX_DIGITS 2)
+(def MAX_DIGITS 12)
 
 ;; Find the highest digit from id onwards
 ;; Return [id digit]
@@ -29,34 +30,41 @@
 ;; enough digits to the remaining numbers
 ;; the cutting is on the end, to preserve the overal index
 (defn find-digit [sub_line position]
-  (let [;; Ignore the last digit since we need to
+  (let [;; Ignore the first digit since we need to
         ;; leave one digit for the units
         subline (subs sub_line (inc position))
-        [id digit]
-        (find-highest-digit subline)]
-    [id digit]))
+        ;; the id we get from the function is relative
+        ;; to the sub-string that started on the position
+        [rel_id digit]
+        (find-highest-digit subline)
+        ;; we need to return the absolute id instead
+        abs_id (+ rel_id position 1)]
+    [abs_id digit]))
 
 
 ;; find the biggest digit (or the first 9) up to the nth-to-last digit
 ;; then afterwards find the next biggest from that position onwards
 ;; until we have a total of MAX_DIGITS
 (defn battery-from-line [line]
-  ;; (println "Processing line:" line)
-  (let [line_len (count line)]
-    (first (reduce
-            ;; id of: the element in the line array
-            ;; parent_id: previous id added to the battery
-            ;; battery: accumulated battery value
-            (fn [[battery parent_id] id]
-              (let [;; safe_line is the line that guarantees enough digits right of it
-                    ;; for the yet required digits
-                    skip_digits (- MAX_DIGITS id 1)
-                    safe_line (subs line 0 (- line_len skip_digits))
-                    [child_id, digit] (find-digit safe_line parent_id)
-                    ;; incrementally shift the battery digits to their right pow 10 value
-                    new_battery (+ digit (* 10 battery))]
-                [new_battery child_id]))
-            [0, -1, 0] (range MAX_DIGITS)))))
+  (println "Processing line:" line)
+  (let [line_len (count line)
+        battery
+        (first (reduce
+                ;; id of: the element in the line array
+                ;; parent_id: previous id added to the battery
+                ;; battery: accumulated battery value
+                (fn [[battery parent_id] id]
+                  (let [;; safe_line is the line that guarantees enough digits right of it
+                        ;; for the yet required digits
+                        skip_digits (- MAX_DIGITS id 1)
+                        safe_line (subs line 0 (- line_len skip_digits))
+                        [child_id, digit] (find-digit safe_line parent_id)
+                        ;; incrementally shift the battery digits to their right pow 10 value
+                        new_battery (+ digit (* 10 battery))]
+                    [new_battery child_id]))
+                [0, -1] (range MAX_DIGITS)))]
+    ;; (println "Battery:" battery)
+    battery))
 
 
 (defn crack-the-code [filepath]
@@ -76,7 +84,7 @@
 
 (defn testing []
   (let [result (crack-the-code TEST_FILE)
-        expected 357];; 3121910778619
+        expected 3121910778619]
     (if (= result expected)
       (main)
       (println (str "Test failed: " result " (expected " expected ")")))))

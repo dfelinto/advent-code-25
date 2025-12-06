@@ -9,6 +9,7 @@
 
 (def paper-chr "@")
 (def null-chr ".")
+(def max-papers-around 4)
 
 ;; Create a new object that extend the initial
 ;; lines with `.`, so it is surrounded by non-paper
@@ -27,17 +28,48 @@
         (apply str (for [_ (range (+ grid-width 2))] null-chr))
         :else
         (str null-chr (nth lines y) null-chr)))))
-               ; 2-arg arity
 
+
+(defn get-kernel [id row-prev row row-next]
+  (concat
+   ;; subs expects the end index to be exclusive
+   (subs row-prev (dec id) (+ 2 id))
+   (nth row (dec id)) (nth row (inc id))
+   ;; subs expects the end index to be exclusive
+   (subs row-next (dec id) (+ 2 id))))
+
+
+;; look for all elements in row and return the ammount
+;; of accessible paper rolls
+(defn process-line [row-prev row row-next]
+  (reduce (fn [{:keys [id acc]} chr]
+            (if (= chr paper-chr)
+              (let [kernel (get-kernel id row-prev row row-next)
+                    ;; count the ammount of papers around the current chr
+                    ;; aka count the papers inside the kernel
+                    num-papers (apply + (for [k kernel :when (= k paper-chr)] 1))]
+                (if (> num-papers max-papers-around)
+                  {:id (inc id) :acc (inc acc)}
+                  {:id (inc id) :acc acc}))
+              {:id (inc id) :acc acc}))
+          ;; Begin at the second character (:id 1)
+          {:id 1 :acc 0}
+          ;; Remove the first and final characters
+          ;; so we only process the "meat" of the line (without the buffer)
+          (take 1 (drop 1 row))))
+
+
+;; Find how many paper rolls are surrounded by less than 4 rolls
 (defn get-accessible-paper-rolls
   ([lines] (get-accessible-paper-rolls lines false))
   ([lines verbose?]
    (:papers
+    ;; Iterate over the third line onward, and always process the middle line
+    ;; This way we skip the buffer lines and deal only with the real data
     (reduce
-     (fn [{:keys [row1 row2 papers] :as acc} row3]
-       (let []
-         (when verbose? (println "Row 1:" row1 "Row 2:" row2 "Row 3:" row3))
-         {:row1 row2 :row2 row3}))
+     (fn [{:keys [row1 row2 papers]} row3]
+       (when verbose? (println "Row 1:" row1 "Row 2:" row2 "Row 3:" row3))
+       {:row1 row2 :row2 :row3 :papers (+ papers (process-line row1 row2 row3))})
      {:row1 (first lines) :row2 (second lines) :papers 0}
      (drop 2 lines)))))
 
@@ -69,11 +101,25 @@
     (is (= expected (create-extended-lines input)))))
 
 
+(deftest test-get-kernel
+  (let [input ["abcde"
+               "fghij"
+               "klmno"
+               "pqrst"
+               "uvxyz"]
+        expected1 (apply str ["abc" "f" "h" "klm"]);;g
+        expected2 (apply str ["bcd" "g" "i" "lmn"]);;h
+        ]
+    (is (= expected1 (apply str (get-kernel 1 (first input) (second input) (nth input 2)))))
+    (is (= expected2 (apply str (get-kernel 2 (first input) (second input) (nth input 2)))))))
+
+
 (deftest test-free-papers-1
   (let [input ["..."
                ".@."
                "..."]]
     (is (= 1 (get-accessible-paper-rolls input)))))
+
 
 (deftest test-free-papers-2
   (let [input ["....."
@@ -81,7 +127,8 @@
                ".@@@."
                ".@@@."
                "....."]]
-    (is (= 4 (get-accessible-paper-rolls input true)))))
+    (is (= 4 (get-accessible-paper-rolls input)))))
+
 
 ;; ------------------------------------------------------------
 ;; Scenario Test

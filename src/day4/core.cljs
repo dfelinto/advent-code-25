@@ -1,7 +1,8 @@
 (ns day4.core
   (:require ["fs" :as fs]
             ["path" :as path]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [cljs.test :refer-macros [deftest is run-tests]]))
 
 (def input-file "../../inputs/day4.txt")
 (def test-file  "../../inputs/day4-test.txt")
@@ -28,6 +29,10 @@
         (str null-chr (nth lines y) null-chr)))))
 
 
+(defn get-accessible-paper-rolls [lines]
+  123)
+
+
 ;; ------------------------------------------------------------
 ;; File processing
 ;; ------------------------------------------------------------
@@ -39,25 +44,55 @@
         lines (str/split-lines content)
         ;; line-len (count(first lines))
         lines-buffer (create-extended-lines lines)]
-    lines-buffer))
+    (get-accessible-paper-rolls lines-buffer)))
 
 
 ;; ------------------------------------------------------------
-;; CLI / Tests
+;; Unit Tests
 ;; ------------------------------------------------------------
+
+(deftest test-buffer-lines-creation
+  (let [input ["abcde" "fghijkl"]
+        expected ["......."
+                  ".abcde."
+                  ".fghijkl."
+                  "......."]]
+    (is (= expected (create-extended-lines input)))))
+
+
+(deftest test-free-papers-1
+  (let [input ["..."
+               ".@."
+               "..."]]
+    (is (= 1 (get-accessible-paper-rolls input)))))
+
+(deftest test-free-papers-2
+  (let [input ["....."
+               ".@@@."
+               ".@@@."
+               ".@@@."
+               "....."]]
+    (is (= 4 (get-accessible-paper-rolls input)))))
+
+;; ------------------------------------------------------------
+;; Scenario Test
+;; ------------------------------------------------------------
+
+(deftest test-sample-data
+  (is (= 13 (crack-the-code test-file))))
+
+
+;; ------------------------------------------------------------
+;; Main
+;; ------------------------------------------------------------
+
 (defn main []
   (println "Result for day 4:" (crack-the-code input-file)))
 
-(defn testing []
-  (let [result   (crack-the-code test-file)
-        expected 13]
-    (if (= result expected)
-      (main)
-      (println (str "Test failed: " result " (expected " expected ")")))))
+
+(defn test-and-run []
+  (when (run-tests)
+    (main)))
 
 
-(defn testing []
-  (let [lines ["abcde" "fghijkl"]]
-    (println (create-extended-lines lines))))
-
-(testing)
+(test-and-run)

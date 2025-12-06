@@ -1,3 +1,8 @@
+;; AI Pass
+;;
+;; * Good to know about `repeat`
+;; * str definitively better than concat
+;; * Nice `(count (filter #(= % paper-chr) kernel))]` line too
 (ns day4.ai
   (:require ["fs" :as fs]
             ["path" :as path]
@@ -42,22 +47,20 @@
 ;; Per-line processing
 ;; ------------------------------------------------------------
 
-(defn process-line
-  ([p c n] (process-line p c n false))
-  ([p c n verbose?]
-   (:acc
-    (reduce
-     (fn [{:keys [id acc]} ch]
-       (if (= ch paper-chr)
-         (let [kernel (get-kernel id p c n)
-               num    (count (filter #(= % paper-chr) kernel))]
-           (if (< num illegal-papers-around)
-             {:id (inc id) :acc (inc acc)}
-             {:id (inc id) :acc acc}))
-         {:id (inc id) :acc acc}))
-     {:id 1 :acc 0}
-     ;; drop padded first/last chars
-     (drop 1 (butlast c))))))
+(defn process-line [p c n]
+  (:acc
+   (reduce
+    (fn [{:keys [id acc]} ch]
+      (if (= ch paper-chr)
+        (let [kernel (get-kernel id p c n)
+              num    (count (filter #(= % paper-chr) kernel))]
+          (if (< num illegal-papers-around)
+            {:id (inc id) :acc (inc acc)}
+            {:id (inc id) :acc acc}))
+        {:id (inc id) :acc acc}))
+    {:id 1 :acc 0}
+    ;; drop padded first/last chars
+    (drop 1 (butlast c)))))
 
 ;; ------------------------------------------------------------
 ;; Entire grid scanning

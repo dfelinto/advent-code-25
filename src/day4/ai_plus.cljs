@@ -1,3 +1,6 @@
+;; Damn the use of partition is craaazy :)
+;; Great use of --> to avoid nested parenthesis
+;; Specially in combination with map and apply +
 (ns day4.ai-plus
   (:require ["fs" :as fs]
             ["path" :as path]
@@ -5,124 +8,139 @@
             [cljs.test :refer-macros [deftest is run-tests]]))
 
 ;; ------------------------------------------------------------
-;; Config
+;; Constants
 ;; ------------------------------------------------------------
-(def input-file "../../inputs/day4.txt")
-(def test-file  "../../inputs/day4-test.txt")
 
 (def paper-chr "@")
 (def null-chr ".")
 (def illegal-papers-around 4)
 
-(def testing? false) ;; set false to run main after tests
-
 ;; ------------------------------------------------------------
-;; Core functions
+;; Padding
 ;; ------------------------------------------------------------
 
-(defn pad-lines
-  "Add a border of null-chr around the grid."
-  [lines]
+(defn create-extended-lines [lines]
   (let [w (count (first lines))
-        border (apply str (repeat (+ w 2) null-chr))]
-    (vec (concat
-          [border]
-          (map #(str null-chr % null-chr) lines)
-          [border]))))
+        pad (apply str (repeat (+ w 2) null-chr))]
+    (concat
+     [pad]
+     (map #(str null-chr % null-chr) lines)
+     [pad])))
 
-(defn get-kernel
-  "Return the 3x3 neighborhood of the character at (row-idx col-idx) as a string."
-  [row-idx col-idx lines]
-  (let [prev (lines (dec row-idx))
-        curr (lines row-idx)
-        next (lines (inc row-idx))]
-    (str
-     (subs prev (dec col-idx) (+ col-idx 2))
-     (nth curr (dec col-idx))
-     (nth curr (inc col-idx))
-     (subs next (dec col-idx) (+ col-idx 2)))))
+;; ------------------------------------------------------------
+;; Kernel extraction
+;; ------------------------------------------------------------
 
-(defn process-row
-  "Count accessible paper rolls in one row (ignore first/last column)."
-  [row-idx lines]
-  (reduce
-   (fn [acc col-idx]
-     (let [chr (get-in lines [row-idx col-idx])]
-       (if (= chr paper-chr)
-         (let [kernel (get-kernel row-idx col-idx lines)
-               num    (count (filter #(= % paper-chr) kernel))]
-           (if (< num illegal-papers-around)
-             (inc acc)
+(defn get-kernel [i p r n]
+  ;; Build 3x3 around row r, column i
+  (list
+   ;; prev row
+   (subs p (dec i) (+ i 2))
+   ;; same row chars left & right
+   (str (nth r (dec i)) (nth r (inc i)))
+   ;; next row
+   (subs n (dec i) (+ i 2))))
+
+;; Flatten kernel -> sequence of chars
+(defn kernel->chars [kernel]
+  (apply concat (map seq kernel)))
+
+;; ------------------------------------------------------------
+;; Process one interior line
+;; ------------------------------------------------------------
+
+(defn process-line
+  ([p r n] (process-line p r n false))
+  ([p r n verbose?]
+   (->> r
+        (map-indexed vector)
+        (drop 1)      ;; skip padded left
+        (butlast)     ;; skip padded right
+        (reduce
+         (fn [acc [i chr]]
+           (if (= chr paper-chr)
+             (let [kernel (get-kernel i p r n)
+                   chars  (kernel->chars kernel)
+                   count @(count (filter #(= % paper-chr) chars))]
+               (if (< count @illegal-papers-around)
+                 (inc acc)
+                 acc))
              acc))
-         acc)))
-   0
-   (range 1 (dec (count (first lines))))))
+         0))))
 
-(defn count-accessible-papers [lines]
-  (let [padded (pad-lines lines)
-        rows (range 1 (dec (count padded)))]
-    (reduce (fn [acc row-idx]
-              (+ acc (process-row row-idx padded)))
-            0
-            rows)))
+;; ------------------------------------------------------------
+;; Whole-grid processing
+;; ------------------------------------------------------------
+
+(defn get-accessible-paper-rolls [lines]
+  (->> lines
+       (partition 3 1)
+       (map (fn [[p r n]] (process-line p r n)))
+       (apply +)))
+
+;; ------------------------------------------------------------
+;; File processing
+;; ------------------------------------------------------------
+
+(defn read-lines [filepath]
+  (let [abs (path/join js/__dirname filepath)
+        content (fs/readFileSync abs "utf8")]
+    (str/split-lines content)))
 
 (defn crack-the-code [filepath]
-  (let [abs (path/join js/__dirname filepath)
-        content (fs/readFileSync abs "utf8")
-        lines   (str/split-lines content)]
-    (count-accessible-papers lines)))
+  (-> filepath
+      read-lines
+      create-extended-lines
+      get-accessible-paper-rolls))
 
 ;; ------------------------------------------------------------
 ;; Tests
 ;; ------------------------------------------------------------
 
-(deftest test-padding
-  (let [input ["abcde" "fghijkl"]
+(deftest test-buffer-lines-creation
+  (let [input ["abcde" "fghij"]
         expected ["......."
                   ".abcde."
-                  ".fghijkl."
+                  ".fghij."
                   "......."]]
-    (is (= expected (vec (pad-lines input))))))
+    (is (= expected (vec (create-extended-lines input))))))
 
 (deftest test-get-kernel
-  (let [input ["abcde"
-               "fghij"
-               "klmno"]]
-    (is (= "abcfhklm" (get-kernel 1 1 input)))
-    (is (= "bcdgilmn" (get-kernel 1 2 input)))))
+  (let [grid ["abcde"
+              "fghij"
+              "klmno"]
+        k1 (apply str (kernel->chars (get-kernel 1 (grid 0) (grid 1) (grid 2))))
+        k2 (apply str (kernel->chars (get-kernel 2 (grid 0) (grid 1) (grid 2))))]
+    (is (= "abcghi" k1))  ;; manually verified kernels
+    (is (= "bcdhij" k2))))
 
-(deftest test-simple-grid-1
+(deftest test-free-paper-1
   (let [input ["..."
                ".@."
                "..."]]
-    (is (= 1 (count-accessible-papers input)))))
+    (is (= 1 (get-accessible-paper-rolls input)))))
 
-(deftest test-simple-grid-2
+(deftest test-free-paper-2
   (let [input ["....."
                ".@@@."
                ".@@@."
                ".@@@."
                "....."]]
-    (is (= 4 (count-accessible-papers input)))))
+    (is (= 4 (get-accessible-paper-rolls input)))))
 
-(deftest test-sample-file
+;; Replace with your real file path:
+(def test-file "../../inputs/day4-test.txt")
+
+(deftest test-sample-data
   (is (= 13 (crack-the-code test-file))))
 
 ;; ------------------------------------------------------------
-;; Main runner
+;; Main
 ;; ------------------------------------------------------------
 
 (defn main []
-  (println "Result for day 4:" (crack-the-code input-file)))
+  (println "Day 4 result:" (crack-the-code "../../inputs/day4.txt")))
 
-(defn run-tests-and-main []
-  ;; run tests (prints results)
-  (run-tests 'day4.core)
-  ;; optionally run main after tests
-  (when-not testing?
-    (main)))
-
-;; ------------------------------------------------------------
-;; Entry point
-;; ------------------------------------------------------------
-(run-tests-and-main)
+;; Run tests and only run main if all passed
+(when (zero? (:fail (run-tests)))
+  (main))

@@ -42,21 +42,22 @@
 ;; look for all elements in row and return the ammount
 ;; of accessible paper rolls
 (defn process-line [row-prev row row-next]
-  (reduce (fn [{:keys [id acc]} chr]
-            (if (= chr paper-chr)
-              (let [kernel (get-kernel id row-prev row row-next)
-                    ;; count the ammount of papers around the current chr
-                    ;; aka count the papers inside the kernel
-                    num-papers (apply + (for [k kernel :when (= k paper-chr)] 1))]
-                (if (> num-papers max-papers-around)
-                  {:id (inc id) :acc (inc acc)}
-                  {:id (inc id) :acc acc}))
-              {:id (inc id) :acc acc}))
-          ;; Begin at the second character (:id 1)
-          {:id 1 :acc 0}
-          ;; Remove the first and final characters
-          ;; so we only process the "meat" of the line (without the buffer)
-          (take 1 (drop 1 row))))
+  (:acc
+   (reduce (fn [{:keys [id acc]} chr]
+             (if (= chr paper-chr)
+               (let [kernel (get-kernel id row-prev row row-next)
+                     ;; count the ammount of papers around the current chr
+                     ;; aka count the papers inside the kernel
+                     num-papers (apply + (for [k kernel :when (= k paper-chr)] 1))]
+                 (if (> num-papers max-papers-around)
+                   {:id (inc id) :acc (inc acc)}
+                   {:id (inc id) :acc acc}))
+               {:id (inc id) :acc acc}))
+           ;; Begin at the second character (:id 1)
+           {:id 1 :acc 0}
+           ;; Remove the first and final characters
+           ;; so we only process the "meat" of the line (without the buffer)
+           (take 1 (drop 1 row)))))
 
 
 ;; Find how many paper rolls are surrounded by less than 4 rolls
@@ -69,7 +70,7 @@
     (reduce
      (fn [{:keys [row1 row2 papers]} row3]
        (when verbose? (println "Row 1:" row1 "Row 2:" row2 "Row 3:" row3))
-       {:row1 row2 :row2 :row3 :papers (+ papers (process-line row1 row2 row3))})
+       {:row1 row2 :row2 row3 :papers (+ papers (process-line row1 row2 row3))})
      {:row1 (first lines) :row2 (second lines) :papers 0}
      (drop 2 lines)))))
 

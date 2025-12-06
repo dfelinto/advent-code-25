@@ -27,10 +27,19 @@
         (apply str (for [_ (range (+ grid-width 2))] null-chr))
         :else
         (str null-chr (nth lines y) null-chr)))))
+               ; 2-arg arity
 
-
-(defn get-accessible-paper-rolls [lines]
-  123)
+(defn get-accessible-paper-rolls
+  ([lines] (get-accessible-paper-rolls lines false))
+  ([lines verbose?]
+   (:papers
+    (reduce
+     (fn [{:keys [row1 row2 papers] :as acc} row3]
+       (let []
+         (when verbose? (println "Row 1:" row1 "Row 2:" row2 "Row 3:" row3))
+         {:row1 row2 :row2 row3}))
+     {:row1 (first lines) :row2 (second lines) :papers 0}
+     (drop 2 lines)))))
 
 
 ;; ------------------------------------------------------------
@@ -72,7 +81,7 @@
                ".@@@."
                ".@@@."
                "....."]]
-    (is (= 4 (get-accessible-paper-rolls input)))))
+    (is (= 4 (get-accessible-paper-rolls input true)))))
 
 ;; ------------------------------------------------------------
 ;; Scenario Test

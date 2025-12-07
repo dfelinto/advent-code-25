@@ -46,42 +46,73 @@
   ([row-prev row row-next verbose?]
    (when verbose? (println "proccess-line:" row-prev row row-next))
    (when verbose? (println "row" row "process-row" (first (butlast row))))
-   (:acc
-    (reduce (fn [{:keys [id acc]} chr]
-              ;;  (println "chr" chr)
-              (if (= chr paper-chr)
-                (let [kernel (get-kernel id row-prev row row-next)
-                      ;; count the ammount of papers around the current chr
-                      ;; aka count the papers inside the kernel
-                      num-papers (apply + (for [k kernel :when (= k paper-chr)] 1))
-                      _ (when verbose?
-                          (println "id" id)
-                          (println "kernel" (apply str kernel))
-                          (println "num-papers" num-papers))]
-                  (if (< num-papers illegal-papers-around)
-                    {:id (inc id) :acc (inc acc)}
-                    {:id (inc id) :acc acc}))
-                {:id (inc id) :acc acc}))
-            ;; Begin at the second character (:id 1)
-            {:id 1 :acc 0}
-            ;; Remove the first and final characters
-            ;; so we only process the "meat" of the line (without the buffer)
-            (drop 1 (butlast row))))))
+   (let [{:keys [acc new-line]}
+         (reduce (fn [{:keys [id acc new-line]} chr]
+                   ;;  (println "chr" chr)
+                   (if (= chr paper-chr)
+                     (let [kernel (get-kernel id row-prev row row-next)
+                           ;; count the ammount of papers around the current chr
+                           ;; aka count the papers inside the kernel
+                           num-papers (apply + (for [k kernel :when (= k paper-chr)] 1))
+                           _ (when verbose?
+                               (println "id" id)
+                               (println "kernel" (apply str kernel))
+                               (println "num-papers" num-papers))]
+                       (if (< num-papers illegal-papers-around)
+                         {:id (inc id) :acc (inc acc) :new-line (str new-line null-chr)}
+                         {:id (inc id) :acc acc :new-line (str new-line chr)}))
+                     {:id (inc id) :acc acc :new-line (str new-line chr)}))
+                 ;; Begin at the second character (:id 1)
+                 {:id 1 :acc 0 :new-line ""}
+                 ;; Remove the first and final characters
+                 ;; so we only process the "meat" of the line (without the buffer)
+                 (drop 1 (butlast row)))]
+     ;;  (when verbose? (println acc "XXX" new-line))
+     {:acc acc :new-line new-line})))
 
 
 ;; Find how many paper rolls are surrounded by less than 4 rolls
 (defn get-accessible-paper-rolls
   ([lines] (get-accessible-paper-rolls lines false))
   ([lines verbose?]
-   (:papers
+   (select-keys
     ;; Iterate over the third line onward, and always process the middle line
     ;; This way we skip the buffer lines and deal only with the real data
     (reduce
-     (fn [{:keys [row1 row2 papers]} row3]
+     (fn [{:keys [row1 row2 papers new-lines]} row3]
        (when verbose? (println "Row 1:" row1 "Row 2:" row2 "Row 3:" row3))
-       {:row1 row2 :row2 row3 :papers (+ papers (process-line row1 row2 row3 verbose?))})
-     {:row1 (first lines) :row2 (second lines) :papers 0}
-     (drop 2 lines)))))
+       (let [{:keys [acc new-line]} (process-line row1 row2 row3 verbose?)
+             new-papers acc]
+         {:row1 row2
+          :row2 row3
+          :papers (+ papers new-papers)
+          :new-lines (conj new-lines new-line)}))
+     {:row1 (first lines)
+      :row2 (second lines)
+      :papers 0
+      :new-lines []}
+     (drop 2 lines))
+    [:papers :new-lines])))
+
+
+;; ------------------------------------------------------------
+;; Recursive loop: Day 4.2 requirement
+;; ------------------------------------------------------------
+
+(defn re-move-papers
+  ([content] (re-move-papers content false))
+  ([content verbose?]
+   (loop [papers 0 lines (str/split-lines content)]
+     (let [lines-buffer (create-extended-lines lines)
+           {new-papers :papers
+            new-lines :new-lines} (get-accessible-paper-rolls lines-buffer verbose?)]
+       (when (and verbose? (not (zero? new-papers)))
+         (println "new-papers" new-papers)
+         (println "\nOld Lines:" lines)
+         (println "New Lines:" new-lines "\n"))
+       (if (zero? new-papers)
+         papers
+         (recur (+ papers new-papers) new-lines))))))
 
 
 ;; ------------------------------------------------------------
@@ -91,11 +122,9 @@
   (println "Reading sequence from file:" filepath)
   (let [abs-path (path/join js/__dirname filepath)
         _ (println "Reading sequence from file:" abs-path)
-        content  (fs/readFileSync abs-path "utf8")
-        lines (str/split-lines content)
-        ;; line-len (count(first lines))
-        lines-buffer (create-extended-lines lines)]
-    (get-accessible-paper-rolls lines-buffer)))
+        content (fs/readFileSync abs-path "utf8")
+        papers (re-move-papers content)]
+    papers))
 
 
 ;; ------------------------------------------------------------
@@ -123,43 +152,43 @@
     (is (= expected1 (apply str (get-kernel 1 (first input) (second input) (nth input 2)))))
     (is (= expected2 (apply str (get-kernel 2 (first input) (second input) (nth input 2)))))))
 
+(deftest test-process-line
+  (is (= 1 (:acc (process-line "..." ".@." "...")))))
+
 
 (deftest test-free-papers-1
-  (let [input ["..."
-               ".@."
-               "..."]]
-    (is (= 1 (get-accessible-paper-rolls input)))))
+  (let [input "@"
+        papers (re-move-papers input)]
+    (is (= 1 papers))))
 
 
 (deftest test-free-papers-2
-  (let [input ["....."
-               ".@@@."
-               ".@@@."
-               ".@@@."
-               "....."]]
-    (is (= 9 (get-accessible-paper-rolls input)))))
+  (let [input (apply
+               str
+               ["@@@\n"
+                "@@@\n"
+                "@@@"])]
+    (is (= 9 (re-move-papers input)))))
 
 
 (deftest test-free-papers-3
-  (let [input ["......."
-               ".@@@@@."
-               ".@@@@@."
-               ".@@@@@."
-               ".@@@@@."
-               ".@@@@@."
-               "......."]]
-    (is (= 4 (get-accessible-paper-rolls input)))))
+  (let [input (apply
+               str
+               ["@@@@@\n"
+                "@@@@@\n"
+                "@@@@@\n"
+                "@@@@@\n"
+                "@@@@@"])]
+    (is (= 4 (re-move-papers input)))))
 
 
 (deftest test-free-papers-4
-  (let [input ["......."
-               ".@@@@@."
-               ".@.@@@."
-               ".@@@@@."
-               ".@@@.@."
-               ".@@@@@."
-               "......."]]
-    (is (= 23 (get-accessible-paper-rolls input)))))
+  (let [input ["@@@@@"
+               "@.@@@"
+               "@@@@@"
+               "@@@.@"
+               "@@@@@"]]
+    (is (= 23 (re-move-papers input)))))
 
 ;; ------------------------------------------------------------
 ;; Scenario Test
@@ -176,9 +205,9 @@
 (defn main []
   (println "Result for day 4.2:" (crack-the-code input-file)))
 
-;; (enable-console-print!)
+(enable-console-print!)
 (run-tests)
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

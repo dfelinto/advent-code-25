@@ -1,6 +1,7 @@
 ;; Damn the use of partition is craaazy :)
 ;; Great use of --> to avoid nested parenthesis
 ;; Specially in combination with map and apply +
+;; and can't wait to use map-indexed (enumerate-like function)
 (ns day4.ai-plus
   (:require ["fs" :as fs]
             ["path" :as path]

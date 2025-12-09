@@ -107,7 +107,7 @@
 
                        :else
                        ;; we don't know, need to check next range
-                       (recur (rest ranges-iter)))))
+                       (recur (rest ranges-loop)))))
                  {:acc 0
                   :ranges-iter ranges}
                  fruits))))

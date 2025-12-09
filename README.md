@@ -10,7 +10,7 @@ Follow the guide here: https://clojure.org/guides/install_clojure
 ## Running
 
 ```bash
-clj -M -m cljs.main --target node --output-to day1.js -c day1.core  && node day1.js
+clj -M -m cljs.main --target node --output-to day.js -c day1.core  && node day.js
 ```
 
 ## Challenges
@@ -24,4 +24,4 @@ clj -M -m cljs.main --target node --output-to day1.js -c day1.core  && node day1
 - [x] [Day 4](https://adventofcode.com/2025/day/4)
 - [x] Day 4.2
 - [x] [Day 5](https://adventofcode.com/2025/day/5)
-- [ ] Day 5.2
+- [x] Day 5.2

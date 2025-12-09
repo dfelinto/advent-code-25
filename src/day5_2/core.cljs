@@ -112,6 +112,20 @@
                   :ranges-iter ranges}
                  fruits))))
 
+
+(defn  all-possible-fresh-fruits
+  ([ranges] (all-possible-fresh-fruits ranges true))
+  ([ranges verbose?]
+   (when verbose? (println "Calculating all possible fresh fruits"))
+   (reduce (fn [acc range]
+             (->
+              acc
+              (+ (:end range) 1)
+              (- (:begin range))))
+           0
+           ranges)))
+
+
 ;; ------------------------------------------------------------
 ;; File processing
 ;; ------------------------------------------------------------
@@ -121,21 +135,14 @@
         _ (println "Reading sequence from file:" abs-path)
         content (fs/readFileSync abs-path "utf8")
         {ranges-raw :ranges
-         numbers-raw :numbers} (select-keys (process-content content) [:ranges :numbers])
+         _ :numbers} (select-keys (process-content content) [:ranges :numbers])
         _ (println "Content processed")
-        ;; numbers (sort numbers-raw)
-        _ (println "Numbers sorted")
         ranges (->>
                 ranges-raw
                 (sort-by :begin)
                 merge-ranges)
-        first_id (:begin (first ranges))
-        last_id (:end (last ranges))
-        numbers (range first_id (inc last_id))
         ;; _ (println "Ranges merged" ranges)
-        ;; _ (println "Numbers" numbers)
-        _ (println "Numbers calculated" first_id last_id)
-        fresh-fruits (count-fresh-fruits ranges numbers true)]
+        fresh-fruits (all-possible-fresh-fruits ranges true)]
     fresh-fruits))
 
 
@@ -185,12 +192,18 @@
     (is (= 3 (count-fresh-fruits ranges numbers)))))
 
 
+(deftest test-count-all-possible-fruits []
+  (let [ranges [{:begin 1 :end 10}
+                {:begin 50 :end 107}
+                {:begin 150 :end 150000}]]
+    (is (= 149919 (all-possible-fresh-fruits ranges)))))
+
 ;; ------------------------------------------------------------
 ;; Scenario Test
 ;; ------------------------------------------------------------
 
 (deftest test-sample-data []
-  (is (= 3 (crack-the-code test-file))))
+  (is (= 14 (crack-the-code test-file))))
 
 
 ;; ------------------------------------------------------------

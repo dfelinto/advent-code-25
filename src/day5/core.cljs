@@ -83,8 +83,31 @@
 (defn count-fresh-fruits
   ([ranges fruits] (count-fresh-fruits ranges fruits false))
   ([ranges fruits verbose?]
-   ;; TODO
-   10))
+   (when verbose? (println "ranges" ranges "\n" "fruits" fruits "\n"))
+   (:acc (reduce (fn [{:keys [acc ranges-iter]} fruit]
+                   (when verbose?
+                     (println "fruit" fruit "acc" acc)
+                     (println "ranges left" ranges-iter "\n"))
+                   (loop [ranges-loop ranges-iter]
+                     (cond
+                       (empty? ranges-loop)
+                       ;; spoiled fruit - and all the ones afterwards
+                       {:acc acc :ranges-iter []}
+
+                       (< fruit (:begin (first ranges-loop)))
+                       ;; spoiled fruit
+                       {:acc acc :ranges-iter ranges-loop}
+
+                       (<= fruit (:end (first ranges-loop)))
+                       ;; fresh fruit
+                       {:acc (inc acc) :ranges-iter ranges-loop}
+
+                       :else
+                       ;; we don't know, need to check next range
+                       (recur (rest ranges-iter)))))
+                 {:acc 0
+                  :ranges-iter ranges}
+                 fruits))))
 
 ;; ------------------------------------------------------------
 ;; File processing
@@ -140,14 +163,22 @@
     (is (= expected-ranges (merge-ranges input-ranges)))))
 
 
+(deftest test-count-fruits []
+  ;; since this test is already sorted
+  ;; we can go straight to count-fruits
+  (let [ranges [{:begin 1 :end 29}
+                {:begin 50 :end 120}]
+        numbers [2 4 51 122 450]]
+    (is (= 3 (count-fresh-fruits ranges numbers)))))
+
+
 ;; ------------------------------------------------------------
 ;; Scenario Test
 ;; ------------------------------------------------------------
 
-(defn test-sample-data []
+(deftest test-sample-data []
   (is (= 3 (crack-the-code test-file))))
 
-(test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

@@ -50,9 +50,11 @@
 
 
 (defn range-from-line [line]
-  (let [[_ begin end] (re-matches #"([0-9]*)\-([0-9]*)"  line)]
-    {:begin (parse-long begin)
-     :end   (parse-long end)}))
+  (let [[_ begin-raw end-raw] (re-matches #"([0-9]*)\-([0-9]*)"  line),
+        begin (parse-long begin-raw)
+        end (parse-long end-raw)]
+    {:begin (min begin end)
+     :end   (max begin end)}))
 
 
 (defn process-content [content]
@@ -127,8 +129,9 @@
                 ranges-raw
                 (sort-by :begin)
                 merge-ranges)
-        _ (println "Ranges merged")
-        fresh-fruits (count-fresh-fruits ranges numbers true)]
+        ;; _ (println "Ranges merged" ranges)
+        ;; _ (println "Numbers" numbers)
+        fresh-fruits (count-fresh-fruits ranges numbers)]
     fresh-fruits))
 
 

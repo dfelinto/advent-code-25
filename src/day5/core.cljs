@@ -87,7 +87,8 @@
    (:acc (reduce (fn [{:keys [acc ranges-iter]} fruit]
                    (when verbose?
                      (println "fruit" fruit "acc" acc)
-                     (println "ranges left" ranges-iter "\n"))
+                     ;;  (println "ranges left" ranges-iter "\n")
+                     )
                    (loop [ranges-loop ranges-iter]
                      (cond
                        (empty? ranges-loop)
@@ -119,12 +120,15 @@
         content (fs/readFileSync abs-path "utf8")
         {ranges-raw :ranges
          numbers-raw :numbers} (select-keys (process-content content) [:ranges :numbers])
+        _ (println "Content processed")
+        numbers (sort numbers-raw)
+        _ (println "Numbers sorted")
         ranges (->>
                 ranges-raw
                 (sort-by :begin)
                 merge-ranges)
-        numbers (sort numbers-raw)
-        fresh-fruits (count-fresh-fruits ranges numbers)]
+        _ (println "Ranges merged")
+        fresh-fruits (count-fresh-fruits ranges numbers true)]
     fresh-fruits))
 
 

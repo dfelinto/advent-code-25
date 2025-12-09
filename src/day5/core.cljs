@@ -117,13 +117,15 @@
   (let [abs-path (path/join js/__dirname filepath)
         _ (println "Reading sequence from file:" abs-path)
         content (fs/readFileSync abs-path "utf8")
-        {:keys [ranges-raw numbers-raw]} (select-keys (process-content content) [:ranges :numbers])
+        {ranges-raw :ranges
+         numbers-raw :numbers} (select-keys (process-content content) [:ranges :numbers])
         ranges (->>
                 ranges-raw
                 (sort-by :begin)
                 merge-ranges)
-        numbers (sort numbers-raw)]
-    (count-fresh-fruits ranges numbers)))
+        numbers (sort numbers-raw)
+        fresh-fruits (count-fresh-fruits ranges numbers)]
+    fresh-fruits))
 
 
 ;; ------------------------------------------------------------
@@ -192,4 +194,4 @@
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

@@ -79,6 +79,13 @@
            (str/split-lines content))
    [:ranges :numbers]))
 
+
+(defn count-fresh-fruits
+  ([ranges fruits] (count-fresh-fruits ranges fruits false))
+  ([ranges fruits verbose?]
+   ;; TODO
+   10))
+
 ;; ------------------------------------------------------------
 ;; File processing
 ;; ------------------------------------------------------------
@@ -87,9 +94,13 @@
   (let [abs-path (path/join js/__dirname filepath)
         _ (println "Reading sequence from file:" abs-path)
         content (fs/readFileSync abs-path "utf8")
-        [ranges numbers] (process-content content)]
-    (println "ranges" ranges "numbers" numbers)
-    10));; TODO
+        {:keys [ranges-raw numbers-raw]} (select-keys (process-content content) [:ranges :numbers])
+        ranges (->>
+                ranges-raw
+                (sort-by :begin)
+                merge-ranges)
+        numbers (sort numbers-raw)]
+    (count-fresh-fruits ranges numbers)))
 
 
 ;; ------------------------------------------------------------
@@ -129,16 +140,14 @@
     (is (= expected-ranges (merge-ranges input-ranges)))))
 
 
-
-;; (test-merge-ranges)
 ;; ------------------------------------------------------------
 ;; Scenario Test
 ;; ------------------------------------------------------------
 
-;; (deftest test-sample-data
-;;   (is (= 3 (crack-the-code test-file))))
+(defn test-sample-data []
+  (is (= 3 (crack-the-code test-file))))
 
-;; (test-sample-data)
+(test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

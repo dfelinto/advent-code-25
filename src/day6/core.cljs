@@ -16,8 +16,38 @@
   (println "Reading sequence from file:" filepath)
   (let [abs-path (path/join js/__dirname filepath)
         _ (println "Reading sequence from file:" abs-path)
-        content (fs/readFileSync abs-path "utf8")]
-    999))
+        content (fs/readFileSync abs-path "utf8")
+        lines (str/split-lines content)
+        numbers (->>
+                 (pop lines)
+                 (map #(str/split (str/triml %) #" +"))
+                 (apply concat)
+                 (map parse-long))
+        ops (map #(if (= % "+") + *)
+                 (->
+                  lines
+                  peek
+                  (str/split #" +")))
+        line-len (count ops)]
+    ;; (println "Numbers: " numbers)
+    ;; (println "Operators: " ops)
+    ;; (println "Line length:" line-len)
+    (first
+     (reduce
+      (fn [[acc numbers-left] op]
+        ;; (println "Inside: " acc op)
+        ;; (println "Test: " (op 2 3))
+        ;; (println "partition =" (partition 1 line-len numbers-left))
+        [(+ acc
+            (->>
+             numbers-left
+             (partition 1 line-len)
+             (apply concat)
+             (reduce op)))
+         (rest numbers-left)])
+      [0 numbers]
+      ops))))
+
 
 ;; ------------------------------------------------------------
 ;; Scenario Test
@@ -26,6 +56,7 @@
 (deftest test-sample-data []
   (is (= 4277556 (crack-the-code test-file))))
 
+;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

@@ -25,4 +25,5 @@ clj -M -m cljs.main --target node --output-to day.js -c day1.core  && node day.j
 - [x] Day 4.2
 - [x] [Day 5](https://adventofcode.com/2025/day/5)
 - [x] Day 5.2
-- [ ] [Day 6](https://adventofcode.com/2025/day/6)
+- [x] [Day 6](https://adventofcode.com/2025/day/6)
+- [ ] Day 6.2

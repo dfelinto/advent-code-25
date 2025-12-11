@@ -9,6 +9,44 @@
 (def test-file  "../../inputs/day6-test.txt")
 
 
+
+(defn pp
+  "Debug printing of seq
+   
+   To be used during -> or ->> code"
+  [seq]
+  ;;   (prn "XXX" seq)
+  seq)
+
+(defn get-column-len
+  "Return the len of the operation column
+   
+   This will work for all but the last column
+   "
+  [op]
+  (dec (count op)))
+
+
+(defn get-numbers-from-column
+  "return a seq with all the numbers for this column"
+  [len string]
+  ;;   (println "len:" len "string: " string)
+  (first
+   (reduce
+    (fn [[acc string] idx]
+      (let [n (->>
+               string
+               (partition 1 len)
+               (apply concat)
+               (apply str)
+               str/trim
+               (parse-long)
+               ;;    (pp)
+               )]
+        [(conj acc n) (rest string)]))
+    [[] string]
+    (range len))))
+
 ;; ------------------------------------------------------------
 ;; File processing
 ;; ------------------------------------------------------------
@@ -20,31 +58,40 @@
         lines (str/split-lines content)
         numbers (->>
                  (pop lines)
-                 (map #(str/split (str/triml %) #" +"))
-                 (apply concat)
-                 (map parse-long))
-        ops (map #(if (= % "+") + *)
-                 (->
-                  lines
-                  peek
-                  (str/split #" +")))
-        line-len (count ops)]
+                 (apply str))
+        ops (->>
+             lines
+             peek
+             ;; add an extra space for the final column
+             ;; so `get-column-len` works since this column
+             ;; is one chr short (it has no right-leading space)
+             (#(str % " "))
+             (re-seq #". +")
+             (map #(if (= (first %) "+")
+                     {:op + :len (get-column-len %)}
+                     {:op * :len (get-column-len %)})))
+        line-len (count (first lines))]
+    ;; (println (count numbers))
     ;; (println "Numbers: " numbers)
     ;; (println "Operators: " ops)
     ;; (println "Line length:" line-len)
     (first
      (reduce
       (fn [[acc numbers-left] op]
-        ;; (println "Inside: " acc op)
-        ;; (println "Test: " (op 2 3))
-        ;; (println "partition =" (partition 1 line-len numbers-left))
         [(+ acc
             (->>
              numbers-left
-             (partition 1 line-len)
+             ;; get column
+             (partition (:len op) line-len)
+             ;; make it a continuos string (for partition)
              (apply concat)
-             (reduce op)))
-         (rest numbers-left)])
+             (apply str)
+             (get-numbers-from-column (:len op))
+             (reduce (:op op))))
+         (subs
+          numbers-left
+          ;; one extra chr for the space between the columns
+          (inc (:len op)))])
       [0 numbers]
       ops))))
 
@@ -56,7 +103,6 @@
 (deftest test-sample-data []
   (is (= 3263827 (crack-the-code test-file))))
 
-;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main
@@ -70,4 +116,4 @@
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

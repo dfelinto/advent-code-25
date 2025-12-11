@@ -8,16 +8,48 @@
 (def input-file "../../inputs/day7.txt")
 (def test-file  "../../inputs/day7-test.txt")
 
-(defn process-tree [init rest]
-  (:acc
-   (reduce (fn [{:keys [acc lines]} line]
-             (let [prev-rays (->
-                              ...)])
-             {:acc 1 :lines line})
-           {:acc 0 :last-line init}
-           rest)))
+(defn new-rays [new-line old-line]
+  (letfn [(line-total [line]
+            (count (filter true? line)))]
+    (- (line-total new-line) (line-total old-line))))
+
+(defn line-rays
+  "Return a seq of bools for each ray in a cell"
+  [line prev-line]
+  (let [line-splitters (map #(= % '\^) line)
+        line-len (count line)]
+    (println prev-line line)
+    (cond
+      (zero? (count (filter true? line-splitters)))
+      prev-line
+      :else
+      (map #(cond
+              (nth prev-line %)
+              true
+              (zero? %)
+              false
+              (= (dec line-len) %)
+              false
+              :else
+              (or (nth line-splitters (dec %))
+                  (nth line-splitters (inc %))))
+           (range line-len)))))
 
 
+(defn process-tree [lines]
+  (let [first-line (map #(= % '\S) (first lines))]
+    (:acc
+     (reduce (fn [{:keys [acc prev-line]} line]
+               ;; a chr is true if:
+               ;; parent is true (nop)
+               ;; sibling is an active split (+1)
+               (let [new-line (line-rays line prev-line)
+                     new-acc (+ acc (new-rays new-line prev-line))]
+                 {:acc new-acc :prev-line new-line}))
+             {:acc 0 :prev-line first-line}
+             (rest lines)))))
+
+;; (count (filter #(= % true) a))
 ;; .......S.......
 ;; ...............
 ;; ....... ^.......
@@ -44,10 +76,8 @@
   (let [abs-path (path/join js/__dirname filepath)
         ;; _ (println "Reading sequence from file:" abs-path)
         content (fs/readFileSync abs-path "utf8")
-        lines (str/split-lines content)
-        [first-line & rest] lines
-        init (.indexOf first-line "S")]
-    (process-tree init rest)))
+        lines (str/split-lines content)]
+    (process-tree lines)))
 
 
 ;; ------------------------------------------------------------

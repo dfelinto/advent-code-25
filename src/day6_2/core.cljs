@@ -34,6 +34,9 @@
   (first
    (reduce
     (fn [[acc string] idx]
+      ;; we iterate over one number at a time
+      ;; by using partition to get the digits from
+      ;; that column
       (let [n (->>
                string
                (partition 1 len)
@@ -43,6 +46,8 @@
                (parse-long)
                ;;    (pp)
                )]
+        ;; use rest here, so that partition can now check
+        ;; the next digit (partition has no offset unfortunatelly)
         [(conj acc n) (rest string)]))
     [[] string]
     (range len))))
@@ -71,19 +76,15 @@
                      {:op + :len (get-column-len %)}
                      {:op * :len (get-column-len %)})))
         line-len (count (first lines))]
-    ;; (println (count numbers))
-    ;; (println "Numbers: " numbers)
-    ;; (println "Operators: " ops)
-    ;; (println "Line length:" line-len)
     (first
      (reduce
       (fn [[acc numbers-left] op]
         [(+ acc
             (->>
              numbers-left
-             ;; get column
+             ;; get complete column string
              (partition (:len op) line-len)
-             ;; make it a continuos string (for partition)
+             ;; make it a continuos string (for partition later)
              (apply concat)
              (apply str)
              (get-numbers-from-column (:len op))

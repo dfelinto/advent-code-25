@@ -8,6 +8,33 @@
 (def input-file "../../inputs/day7.txt")
 (def test-file  "../../inputs/day7-test.txt")
 
+(defn process-tree [init rest]
+  (:acc
+   (reduce (fn [{:keys [acc lines]} line]
+             (let [prev-rays (->
+                              ...)])
+             {:acc 1 :lines line})
+           {:acc 0 :last-line init}
+           rest)))
+
+
+;; .......S.......
+;; ...............
+;; ....... ^.......
+;; ...............
+;; ...... ^. ^......
+;; ...............
+;; ..... ^. ^. ^.....
+;; ...............
+;; .... ^. ^... ^....
+;; ...............
+;; ... ^. ^... ^. ^...
+;; ...............
+;; .. ^... ^..... ^..
+;; ...............
+;; . ^. ^. ^. ^. ^... ^.
+;; ...............
+
 
 ;; ------------------------------------------------------------
 ;; File processing
@@ -17,8 +44,10 @@
   (let [abs-path (path/join js/__dirname filepath)
         ;; _ (println "Reading sequence from file:" abs-path)
         content (fs/readFileSync abs-path "utf8")
-        lines (str/split-lines content)])
-  10)
+        lines (str/split-lines content)
+        [first-line & rest] lines
+        init (.indexOf first-line "S")]
+    (process-tree init rest)))
 
 
 ;; ------------------------------------------------------------

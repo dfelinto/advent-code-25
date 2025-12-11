@@ -10,7 +10,7 @@ Follow the guide here: https://clojure.org/guides/install_clojure
 ## Running
 
 ```bash
-clj -M -m cljs.main --target node --output-to day.js -c day1.core  && node day.js
+clj -M -m cljs.main --target node --output-to out.js -c day1.core  && node out.js
 ```
 
 ## Challenges

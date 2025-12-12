@@ -53,25 +53,68 @@
                           '\.) new-line active-splitters line))))
 
 
+(defn process-line
+  ([line prev-line next-lines] (process-line line prev-line next-lines false))
+  ([line prev-line next-lines verbose?]
+   (let [active-splitters (map #(and %1 (= %2 '\^)) prev-line line)
+         line-range (range (count prev-line))]
+     (when verbose? (ptree line prev-line active-splitters))
+     (reduce
+      +
+      (map-indexed
+       (fn [idx is-splitter?]
+         ;;  (println idx is-splitter?)
+         (let [[next-line & lines] next-lines
+               line-a (map #(= % (dec idx)) line-range)
+               line-b (map #(= % (inc idx)) line-range)
+               is-ray? (true? (nth prev-line idx))
+               is-nada? (not is-ray?)]
+           (cond
+             is-splitter?
+             (+ (process-line next-line line-a lines verbose?)
+                (process-line next-line line-b lines))
+
+             ;; no splitter, no ray, just ends the timeline here
+             is-nada?
+             0
+
+             ;; active ray, continue to the next line with a single ray
+             ;; pass the current line as the previous line since the
+             ;; only relevant info is this current ray, and there is only one
+             ;; ray per line any-ways, thanks to timeline split
+             (not (nil? next-line))
+             (process-line next-line line lines verbose?)
+             ;;  (process-line next-line (map #(= % idx) line-range) lines)
+             ;; if we were inside a reduce (instead of a map) we could end here
+
+             ;; the timeline ends, let's add it to the count
+             :else
+             1)))
+       active-splitters)))))
+
+
 (defn process-tree
   ([lines] (process-tree lines false))
   ([lines verbose?]
-   (let [first-line (map #(= % '\S) (first lines))]
-     (:acc
-      (reduce (fn [{:keys [acc prev-line]} line]
-                (let [new-line (line-rays line prev-line)
-                      active-splitters (->>
-                                        line
-                                        (map #(and %1 (= %2 '\^)) prev-line))
-                      active-splitters-count (->>
-                                              active-splitters
-                                              (filter true?)
-                                              count)
-                      new-acc (+ acc active-splitters-count)]
-                  (when verbose? (ptree line new-line active-splitters))
-                  {:acc new-acc :prev-line new-line}))
-              {:acc 0 :prev-line first-line}
-              (rest lines))))))
+   (let [[first-line & lines] lines
+         first-line (map #(= % '\S) first-line)
+         [second-line & lines] lines]
+     (process-line second-line first-line lines verbose?))))
+;;  (:acc
+;;   (reduce (fn [{:keys [acc prev-line]} line]
+;;             (let [new-line (line-rays line prev-line)
+;;                   active-splitters (->>
+;;                                     line
+;;                                     (map #(and %1 (= %2 '\^)) prev-line))
+;;                   active-splitters-count (->>
+;;                                           active-splitters
+;;                                           (filter true?)
+;;                                           count)
+;;                   new-acc (+ acc active-splitters-count)]
+;;               (when verbose? (ptree line new-line active-splitters))
+;;               {:acc new-acc :prev-line new-line}))
+;;           {:acc 0 :prev-line first-line}
+;;           (rest lines))))))
 
 
 ;; ------------------------------------------------------------

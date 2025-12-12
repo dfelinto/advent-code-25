@@ -70,11 +70,15 @@
                is-ray? (true? (nth prev-line idx))
                is-nada? (not is-ray?)]
            (cond
+             ;; Timeline ends here
+             (nil? next-line)
+             (if is-ray? 1 0)
+
              is-splitter?
              (+ (process-line next-line line-a lines verbose?)
                 (process-line next-line line-b lines))
 
-             ;; no splitter, no ray, just ends the timeline here
+             ;; no splitter, no ray, just ignores this cell
              is-nada?
              0
 
@@ -82,14 +86,13 @@
              ;; pass the current line as the previous line since the
              ;; only relevant info is this current ray, and there is only one
              ;; ray per line any-ways, thanks to timeline split
-             (not (nil? next-line))
+             is-ray?
              (process-line next-line line lines verbose?)
              ;;  (process-line next-line (map #(= % idx) line-range) lines)
              ;; if we were inside a reduce (instead of a map) we could end here
 
-             ;; the timeline ends, let's add it to the count
              :else
-             1)))
+             0)))
        active-splitters)))))
 
 

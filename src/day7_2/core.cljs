@@ -203,7 +203,7 @@
 ;; ------------------------------------------------------------
 
 (defn main []
-  (println "Result for day 7.2:" (crack-the-code input-file true)))
+  (time (println "Result for day 7.2:" (crack-the-code input-file true))))
 
 (enable-console-print!)
 ;; (run-tests)

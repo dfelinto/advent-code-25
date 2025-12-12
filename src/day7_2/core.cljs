@@ -79,8 +79,8 @@
              (if is-ray? 1 0)
 
              is-splitter?
-             (+ (process-line next-line line-a lines verbose?)
-                (process-line next-line line-b lines))
+             (+ (process-line next-line line-a lines)
+                (process-line next-line line-b lines verbose?))
 
              ;; no splitter, no ray, just ignores this cell
              is-nada?

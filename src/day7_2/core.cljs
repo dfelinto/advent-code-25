@@ -43,12 +43,12 @@
   (println "  "
            (apply str
                   (map #(cond
+                          (true? %2)
+                          '\^
                           (true? %1)
                           '\|
-                          (true? %2)
-                          '\+
                           (= '\^ %3)
-                          '\-
+                          '\^
                           :else
                           '\.) new-line active-splitters line))))
 
@@ -58,6 +58,9 @@
   ([line prev-line next-lines verbose?]
    (let [active-splitters (map #(and %1 (= %2 '\^)) prev-line line)
          line-range (range (count prev-line))]
+     ;;  (when verbose? (println "->" (apply str (map #(if % '\| " ") prev-line))))
+     ;;  (when verbose? (println "->" line))
+     ;;  (when verbose? (println "->" (apply str (map #(if (= % '\^) '\. " ") active-splitters))))
      (when verbose? (ptree line prev-line active-splitters))
      (reduce
       +
@@ -69,6 +72,7 @@
                line-b (map #(= % (inc idx)) line-range)
                is-ray? (true? (nth prev-line idx))
                is-nada? (not is-ray?)]
+           ;;  (when verbose? (println idx ":" (if is-ray? "r :" "  :") (if is-splitter? "^ :" "  :") (if is-nada? "-" " ")))
            (cond
              ;; Timeline ends here
              (nil? next-line)
@@ -87,8 +91,8 @@
              ;; only relevant info is this current ray, and there is only one
              ;; ray per line any-ways, thanks to timeline split
              is-ray?
-             (process-line next-line line lines verbose?)
-             ;;  (process-line next-line (map #(= % idx) line-range) lines)
+             ;;  (let [_ (when verbose? (println "|" idx))]
+             (process-line next-line (map #(= % idx) line-range) lines verbose?)
              ;; if we were inside a reduce (instead of a map) we could end here
 
              :else
@@ -135,6 +139,59 @@
 
 
 ;; ------------------------------------------------------------
+;; Unittests
+;; ------------------------------------------------------------
+
+(deftest test-tree-1 []
+  (let [input
+        ["....S...."
+         "........."
+         "........."
+         "........."
+         "........."]]
+    (is (= 1 (process-tree input)))))
+
+
+(deftest test-tree-2 []
+  (let [input
+        ["....S...."
+         "........."
+         ".^.....^."
+         "........."
+         "........."]]
+    (is (= 1 (process-tree input)))))
+
+
+(deftest test-tree-3 []
+  (let [input
+        ["....S...."
+         "........."
+         "....^...."
+         "........."
+         "........."]]
+    (is (= 2 (process-tree input)))))
+
+
+(deftest test-tree-4 []
+  (let [input
+        ["....S...."
+         "....^...."
+         "...^....."
+         "........."
+         "........."]]
+    (is (= 3 (process-tree input)))))
+
+
+(deftest test-tree-5 []
+  (let [input
+        ["....S...."
+         "....^...."
+         "...^.^..."
+         "........."
+         "........."]]
+    (is (= 4 (process-tree input)))))
+
+;; ------------------------------------------------------------
 ;; Scenario Test
 ;; ------------------------------------------------------------
 
@@ -146,11 +203,11 @@
 ;; ------------------------------------------------------------
 
 (defn main []
-  (println "Result for day 7.2:" (crack-the-code input-file)))
+  (println "Result for day 7.2:" (crack-the-code input-file true)))
 
 (enable-console-print!)
-(run-tests)
+;; (run-tests)
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

@@ -13,6 +13,26 @@ Follow the guide here: https://clojure.org/guides/install_clojure
 clj -M -m cljs.main --target node --output-to out.js -c day1.core  && node out.js
 ```
 
+## My Rules (aka AI?)
+
+This is the first time I take part on the advent of code. I wanted to do a more serious attempt at learning Clojure Script and this fit right in.
+
+I've been using AI to navigate my way around the language, mostly for syntax (less so every day). And after I'm done with a challenge I do a pass on ChatGPT to know a more idiomatic way of writing the same code (or a faster one). I've been uploading some of those attempts (look for ai.cljs in some of the folders).
+
+More recently I found an even better resource: [Christian Mangelsdorf's X account](https://x.com/ch_mangelsdorf).
+
+The guy is brilliant, and his one-page solutions are so elegant. So now after I'm done with a challenge I go to hsi feed to learn how to do it "the right way".
+
+I'll save his screenshots here later so they don't get lost. Thank you random generous internet stranger :)
+
+## Progress so far
+
+Days 1-6 were quite within my comfort zone. While I reached this mid-point I noticed already how much more comfortable I'm at reading Clojure code.
+
+My initial goal was to be better at analysing Penpot code-base. I went back to it this week and it is day and night. Before that I watched a one-hour video on Clojure and risked a few simple patches. At the moment I feel finally comfortable understanding whateheck I did back then hehe.
+
+I'm also reading the Brave and Bold Clojure book and it seems great so far. I can highly recommend it already.
+
 ## Challenges
 
 - [x] [Day 1.1](https://adventofcode.com/2025/day/1)

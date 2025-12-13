@@ -39,23 +39,22 @@
 
 (defn ptree
   "Debug function to print the current line with rays and splitters"
-  [line new-line active-splitters]
+  [ray-idx line]
   (println "  "
            (apply str
-                  (map #(cond
-                          (true? %2)
-                          '\^
-                          (true? %1)
-                          '\|
-                          (= '\^ %3)
-                          '\^
-                          :else
-                          '\.) new-line active-splitters line))))
+                  (map-indexed #(cond
+                                  (= %2 '\^)
+                                  '\^
+                                  (= ray-idx %1)
+                                  '\|
+                                  :else
+                                  '.) line))))
 
 
 (defn process-line
   ([ray-idx line next-lines] (process-line ray-idx line next-lines false))
   ([ray-idx line next-lines verbose?]
+   (when verbose? (ptree ray-idx line))
    (let [[next-line & lines] next-lines]
      (cond
        ;; Timeline ends here

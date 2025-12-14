@@ -9,9 +9,18 @@ Follow the guide here: https://clojure.org/guides/install_clojure
 
 ## Running
 
+Day 1-7.1
 ```bash
 clj -M -m cljs.main --target node --output-to out.js -c day1.core  && node out.js
 ```
+
+Day 7.2- onwards
+```bash
+bb src/day7_2/core.cljs
+```
+
+I was so stuck on the time Day 7 part 2 was taken to process that I switched to Babashka.
+As it turned out, the issue wasn't of performance, but of algorithm :)
 
 ## My Rules (aka AI?)
 

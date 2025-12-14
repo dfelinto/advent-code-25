@@ -160,7 +160,7 @@
          results
          (reduce
           (fn [acc idx]
-            (conj acc [idx (process-tree (take idx lines))]))
+            (conj acc [idx (process-tree-smart (take idx lines))]))
           []
           (range (count lines)))
          ;; (range 5))

@@ -75,7 +75,7 @@
   ([lines] (process-tree-naive lines false))
   ([lines verbose?]
    (let [[first-line & lines] lines
-         ray-idx (.indexOf first-line '\S)
+         ray-idx (.indexOf first-line "S")
          [second-line & lines] lines]
      (process-line-naive ray-idx second-line lines verbose?))))
 

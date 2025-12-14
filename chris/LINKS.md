@@ -1,0 +1,15 @@
+In this folder there is a dump from a friendly person I found on twitter. He shared all his answers there, so I copied here for my own reference (I check them once I'm done with my own).
+
+* [Day 1](https://x.com/ch_mangelsdorf/status/1995376610724458497)
+* [Day 2](https://x.com/ch_mangelsdorf/status/1995761763006980537)
+* [Day 3](https://x.com/ch_mangelsdorf/status/1996190939736592638)
+* [Day 4](https://x.com/ch_mangelsdorf/status/1996505603926372782)
+* [Day 5](https://x.com/ch_mangelsdorf/status/1996880925624619154)
+* [Day 6](https://x.com/ch_mangelsdorf/status/1997271679723295177)
+* [Day 7](https://x.com/ch_mangelsdorf/status/1997638919211348326)
+* [Day 8](https://x.com/ch_mangelsdorf/status/1997989561700364768)
+* [Day 9](https://x.com/ch_mangelsdorf/status/1998584670544629775)
+* [Day 10](https://x.com/ch_mangelsdorf/status/1999064356940648615)
+* [Day 11](https://x.com/ch_mangelsdorf/status/1999116209782919551)
+* [Day 12](https://x.com/ch_mangelsdorf/status/1999607629681656054)
+* [All Times](https://x.com/ch_mangelsdorf/status/1999832534041948497)

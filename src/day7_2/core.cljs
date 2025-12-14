@@ -1,3 +1,9 @@
+;; There are a few different approaches in this file.
+;; There is a naïve one, which works until the 50-60 line of data.
+;; There is the smart approach.
+;; And ... there is the cached approach which is the naïve + memoize and holly molly
+;; this is the faster by far
+
 (ns day7-2.core
   (:require
    [babashka.fs :as fs]
@@ -21,6 +27,10 @@
 
 (defn is-right-timeline? [idx line prev-line] (if (= '\^ (get line (dec idx))) (nth prev-line (dec idx)) 0))
 
+
+;; ------------------------------------------------------------
+;; Smart solution - calculate the lines one by one in a smart algorithm
+;; ------------------------------------------------------------
 
 (defn process-line
   ([line prev-line next-lines] (process-line line prev-line next-lines false))
@@ -79,6 +89,43 @@
          [second-line & lines] lines]
      (process-line-naive ray-idx second-line lines verbose?))))
 
+
+;; ------------------------------------------------------------
+;; Caching with memoize
+;; ------------------------------------------------------------
+
+(declare process-line-cache)
+
+
+(def cached-process-line-cache
+  (memoize
+   (fn [& args] (apply process-line-cache args))))
+
+
+(defn process-line-cache
+  [ray-idx line next-lines]
+  ;;  (when verbose? (ptree ray-idx line))
+  (let [[next-line & lines] next-lines]
+    (cond
+      ;; Timeline ends here
+      (nil? next-line)
+      1
+
+      (= (nth line ray-idx) '\^)
+      (+ (cached-process-line-cache (dec ray-idx) next-line lines)
+         (cached-process-line-cache (inc ray-idx) next-line lines))
+
+      :else
+      (cached-process-line-cache ray-idx next-line lines))))
+
+
+(defn process-tree-cache
+  [lines]
+  (let [[first-line & lines] lines
+        ray-idx (.indexOf first-line "S")
+        [second-line & lines] lines]
+    (process-line-cache ray-idx second-line lines)))
+
 ;; ------------------------------------------------------------
 ;; File processing
 ;; ------------------------------------------------------------
@@ -92,7 +139,7 @@
     str
     slurp
     (str/split-lines)
-    (process-tree))))
+    (process-tree-cache))))
 
 
 (defn output-all-solutions
@@ -127,7 +174,6 @@
 (defn test-sample-data []
   (is 40 (crack-the-code test-file true)))
 
-
 (test-sample-data)
 
 ;; ------------------------------------------------------------
@@ -137,8 +183,6 @@
 (defn main []
   (time (println "Result for day 7.2:" (crack-the-code input-file true))))
 
-;; (enable-console-print!)
-;; (run-tests)
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass

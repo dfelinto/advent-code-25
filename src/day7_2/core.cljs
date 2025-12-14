@@ -49,6 +49,37 @@
 
 
 ;; ------------------------------------------------------------
+;; Naïve solution - this works well until around 50 lines of data
+;; Check graphs/day7.jpg to understand why it fails afterwards
+;; ------------------------------------------------------------
+
+(defn process-line-naive
+  ([ray-idx line next-lines] (process-line-naive ray-idx line next-lines false))
+  ([ray-idx line next-lines verbose?]
+   ;;  (when verbose? (ptree ray-idx line))
+   (let [[next-line & lines] next-lines]
+     (cond
+       ;; Timeline ends here
+       (nil? next-line)
+       1
+
+       (= (nth line ray-idx) '\^)
+       (+ (process-line-naive (dec ray-idx) next-line lines false)
+          (process-line-naive (inc ray-idx) next-line lines verbose?))
+
+       :else
+       (process-line-naive ray-idx next-line lines verbose?)))))
+
+
+(defn process-tree-naive
+  ([lines] (process-tree-naive lines false))
+  ([lines verbose?]
+   (let [[first-line & lines] lines
+         ray-idx (.indexOf first-line '\S)
+         [second-line & lines] lines]
+     (process-line-naive ray-idx second-line lines verbose?))))
+
+;; ------------------------------------------------------------
 ;; File processing
 ;; ------------------------------------------------------------
 (defn crack-the-code

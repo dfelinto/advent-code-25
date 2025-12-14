@@ -6,6 +6,7 @@
 
 (def input-file "inputs/day7.txt")
 (def test-file  "inputs/day7-test.txt")
+(def output-file "output.csv")
 
 
 (defn is [expected got]
@@ -62,6 +63,31 @@
     (str/split-lines)
     (process-tree))))
 
+
+(defn output-all-solutions
+  "Output a csv file with the solution for each possible path"
+  ([filepath] (crack-the-code filepath false))
+  ([filepath verbose?]
+   (println "Reading sequence from file:" filepath)
+   (let [lines (->>
+                filepath
+                (fs/absolutize)
+                str
+                slurp
+                (str/split-lines))
+         results
+         (reduce
+          (fn [acc idx]
+            (conj acc [idx (process-tree (take idx lines))]))
+          []
+          (range (count lines)))
+         ;; (range 5))
+         content (->>
+                  results
+                  (map #(str/join ";" %))
+                  (str/join "\n"))]
+     (spit output-file content :append false)
+     (println "Results outputted to:" output-file))))
 
 ;; ------------------------------------------------------------
 ;; Scenario Test

@@ -32,8 +32,8 @@
 ;; Smart solution - calculate the lines one by one in a smart algorithm
 ;; ------------------------------------------------------------
 
-(defn process-line
-  ([line prev-line next-lines] (process-line line prev-line next-lines false))
+(defn process-line-smart
+  ([line prev-line next-lines] (process-line-smart line prev-line next-lines false))
   ([line prev-line next-lines verbose?]
    (let [[next-line & lines] next-lines
          current-line
@@ -48,14 +48,14 @@
        (reduce + current-line)))))
 
 
-(defn process-tree
-  ([lines] (process-tree lines false))
+(defn process-tree-smart
+  ([lines] (process-tree-smart lines false))
   ([lines verbose?]
    (let [[line & lines] lines
          first-line (map #(if (= % '\S) 1 0) line)
          [second-line & lines] lines]
      ;; Start processing the second line onwards
-     (process-line second-line first-line lines true))))
+     (process-line-smart second-line first-line lines true))))
 
 
 ;; ------------------------------------------------------------
@@ -92,11 +92,15 @@
 
 ;; ------------------------------------------------------------
 ;; Caching with memoize
+;; This is basically the naïve solution, but with cache
 ;; ------------------------------------------------------------
 
 (declare process-line-cache)
 
 
+;; Because of the dependency between both functions I need
+;; to initialize this to an anonymous function
+;; otherwise it would get evaluated to nil
 (def cached-process-line-cache
   (memoize
    (fn [& args] (apply process-line-cache args))))

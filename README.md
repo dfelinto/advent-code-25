@@ -7,6 +7,12 @@ I will try to use the [advent of code](https://adventofcode.com/2025) to better 
 
 Follow the guide here: https://clojure.org/guides/install_clojure
 
+Copy your own input data to /inputs/
+(day1.txt, day2.txt, ...)
+
+If you don't want to do this, just use the test file as teh main file:
+`cp inputs/day1-test.txt inputs/day1.txt`.
+
 ## Running
 
 Day 1-7.1

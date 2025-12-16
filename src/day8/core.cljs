@@ -37,6 +37,65 @@
     {:box1 box1 :box2 box2 :dist (square-distance box1 box2)}))
 
 
+(def test-cluster-data
+  [[{:x 1 :y 2 :z 3}
+    {:x 4 :y 5 :z 6}
+    {:x 7 :y 9 :z 12}
+    {:x 14 :y 20 :z 1}]
+   [{:x 6 :y 7 :z 6}
+    {:x 5 :y 6 :z 2}]
+   [{:x 4 :y 8 :z 5}
+    {:x 3 :y 6 :z 9}
+    {:x 2 :y 5 :z 11}]
+   [{:x 1 :y 0 :z 12}]])
+
+
+(def idx-unset -1)
+
+(defn box-cluster-idx [box lookup]
+  (:idx (first (filter #(= box (:box %)) lookup))))
+
+
+(defn cluster-boxes
+  [boxes distances]
+  (let [boxes-lookup (for [box boxes] {:box box :idx idx-unset})]
+    (:clusters
+     (reduce (fn [{:keys [clusters boxes-lookup]} connection]
+               (let [{:keys [box1 box2]} connection
+                     box1-idx (box-cluster-idx box1 boxes-lookup)
+                     box2-idx (box-cluster-idx box2 boxes-lookup)]
+                 (cond
+                   (= box1-idx box2-idx idx-unset)
+                   ;; Creates a new cluster for them two
+                   {:clusters (conj clusters [box1 box2])
+                    :boxes-lookup (->>
+                                   boxes-lookup
+                                   (filter #(not (or (= (:box %) box1) (= (:box %) box2))))
+                                   (conj [{:box box1 :idx (count clusters)}
+                                          {:box box2 :idx (count clusters)}]))}
+
+                   (= box1-idx box2-idx)
+                   ;; Ignores, it means they are in the same cluster already
+                   {:clusters clusters :boxes-lookup boxes-lookup}
+
+                   :else
+                   ;; TODO handle the case where we want to merge clusters
+                   {:clusters clusters :boxes-lookup boxes-lookup})))
+             {:clusters [] :boxes-lookup boxes-lookup}
+             distances))))
+
+
+(defn result-from-clusters
+  "Result the product of the size of the three largest clusters"
+  [clusters]
+  (->>
+   clusters
+   (sort #(> (count %1) (count %2)))
+   (take 3)
+   (map count)
+   (reduce *)))
+
+
 (defn crack-the-code
   ([lines] (crack-the-code false))
   ([lines verbose?]
@@ -50,9 +109,10 @@
                     (filter
                      #(not (or (= (:box1 %) (:box2 %))
                                (neg? (:dist %)))))
-                    (sort-by :dist))]
-     (take 5 distances);; TODO logic
-     )))
+                    (sort-by :dist)
+                    (map #(select-keys % [:box1 :box2])))
+         clusters (cluster-boxes boxes distances)]
+     (result-from-clusters clusters))))
 
 ;; Next: creates a par of boxes [a b] sorted by the distance between
 ;; all boxes. To do this creates a connection between all boxes

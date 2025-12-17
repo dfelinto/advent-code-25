@@ -12,10 +12,38 @@
 (defn is [expected got] (if (= expected got) true (println "Error: expected:" expected ", got:" got)))
 
 
+(defn parse-corners
+  "1,2 -> {:x 1 :y 2}"
+  [line] (->>
+          (str/split line #",")
+          (map parse-long)
+          (zipmap [:x :y])))
+
+(defn area [from to]
+  ;;   (println from to)
+  (let [width (inc (abs (- (:x from) (:x to))))
+        height (inc (abs (- (:y from) (:y to))))
+        square-area (* width height)]
+    ;; (println square-area)
+    square-area))
+
+
+(defn calculate-areas [corners]
+  (for [from-idx (range (count corners))
+        to-idx (range (inc from-idx) (count corners))]
+    (let [from (corners from-idx)
+          to (corners to-idx)]
+      (area from to))))
+
+
 (defn crack-the-code
   ([lines] (crack-the-code lines false))
   ([lines verbose?]
-   -100))
+   (let [corners (->> lines
+                      (map parse-corners)
+                      vec)
+         areas (calculate-areas corners)]
+     (apply max areas))))
 
 
 ;; ------------------------------------------------------------
@@ -39,7 +67,7 @@
 (defn test-sample-data []
   (is 50 (crack-the-code (input test-file) true)))
 
-(test-sample-data)
+;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main
@@ -51,4 +79,4 @@
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

@@ -46,19 +46,20 @@
     false))
 
 
-(defn connect-corners [corners]
-  (reduce (fn [acc _]
-            (let [{:keys [x y]} (last acc)
-                  prev-corner (last (butlast acc))
-                  next-corner (first (filter #(and (not (= prev-corner %))
-                                                   (xor (= x (:x %))
-                                                        (= y (:y %)))) corners))]
-              ;; (println (last acc) next-corner)
-              (conj
-               acc
-               next-corner)))
-          [(first corners)]
-          (range (dec (count corners)))))
+;; (defn connect-corners [corners]
+;;   (reduce (fn [acc _]
+;;             (let [{:keys [x y]} (last acc)
+;;                   prev-corner (last (butlast acc))
+;;                   next-corner (first (filter #(and (not (= prev-corner %))
+;;                                                    (xor (= x (:x %))
+;;                                                         (= y (:y %)))) corners))]
+;;               ;; (println (last acc) next-corner)
+;;               (conj
+;;                acc
+;;                next-corner)))
+;;           [(first corners)]
+;;           (range (dec (count corners)))))
+
 
 (defn min-max [c1 c2]
   (let [min-x (min (:x c1) (:x c2))
@@ -68,13 +69,13 @@
     [min-x min-y max-x max-y]))
 
 
-(def mix-max-optimized (memoize min-max))
+(def min-max-optimized (memoize min-max))
 
 
 (defn is-outside?
   ([c1 c2 p] (is-outside? c1 c2 p false))
   ([c1 c2 p verbose?]
-   (let [[min-x  min-y  max-x  max-y] (mix-max-optimized c1 c2)
+   (let [[min-x  min-y  max-x  max-y] (min-max-optimized c1 c2)
          x (:x p)
          y (:y p)
          c1' {:x (:x c1) :y (:y c2)}
@@ -92,10 +93,9 @@
       (> y max-y)))))
 
 
-;; (def is-outside? (complement is-inside?))
-
 (defn is-valid-connection?
-  "The connection is valid if no points is inside the rectangle"
+  "The connection is valid if no points from the perimeter are inside the rectangle"
+  ;; this function is not correct, it can break in a few scenarios
   [perimeter areas]
   (let [c1 (:from areas)
         c2 (:to areas)
@@ -110,8 +110,8 @@
 (defn get-chr [point perimeter]
   (cond
     (first (filter #(= point %) perimeter))
-    ;; (str (.indexOf perimeter point))
-    "#"
+    (str (.indexOf perimeter point))
+    ;; "#"
 
     ;; (is-outside? {:x 9 :y 7} {:x 2 :y 3} point)
     ;; "."
@@ -140,17 +140,17 @@
    (let [corners (->> lines
                       (map parse-corners)
                       vec)
-         perimeter (connect-corners corners)
+         ;;  perimeter (connect-corners corners)
+         perimeter corners ;; as it turned out, the perimeter and corners are the same
          areas (calculate-areas corners)]
+     ;;  (is corners (connect-corners corners))
      (when verbose? (pp-debug perimeter))
+     ;;  (is (count corners) (count perimeter))
      (->>
       areas
       (filter (partial is-valid-connection? perimeter))
       (mapv :area)
-      (apply max)
-      ;;  (println perimeter)
-      ;;  (println (count perimeter))
-      ))))
+      (apply max)))))
 
 
 ;; ------------------------------------------------------------
@@ -172,16 +172,16 @@
 ;; ------------------------------------------------------------
 
 (defn test-sample-data []
-  (is 24 (crack-the-code (input test-file) false)))
+  (is 24 (crack-the-code (input test-file) true)))
 
-(test-sample-data)
+;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main
 ;; ------------------------------------------------------------
 
 (defn main []
-  (time (println "Result for day 9:" (crack-the-code (input input-file) true))))
+  (time (println "Result for day 9.2:" (crack-the-code (input input-file) false))))
 
 
 ;; There is no way to process the output of (run-tests) to know if it fails.

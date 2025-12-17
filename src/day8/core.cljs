@@ -13,7 +13,7 @@
 
 
 (defn square-distance [vec1 vec2]
-  (int
+  (long
    (+ (Math/pow (- (:x vec1) (:x vec2)) 2)
       (Math/pow (- (:y vec1) (:y vec2)) 2)
       (Math/pow (- (:z vec1) (:z vec2)) 2))))
@@ -56,33 +56,90 @@
   (:idx (first (filter #(= box (:box %)) lookup))))
 
 
+(defn merged-boxes-lookup [boxes-lookup cluster-from box-idx-to]
+  (let [cluster-set (set cluster-from)
+        lean-lookup (filter #(not (contains? cluster-set (:box %))) boxes-lookup)
+        extra-items (map #(hash-map :box % :idx box-idx-to) cluster-from)]
+    (concat lean-lookup extra-items)))
+
+(defn box-to-str [box]
+  (str "{:x " (:x box)
+       " :y " (:y box)
+       " :z " (:z box)
+       "}"))
+
+(defn pp-clusters [clusters]
+  (let [re-mixed-clusters (for [cluster clusters]
+                            (map (fn [box] (box-to-str box)) cluster))]
+    (println "clusters" re-mixed-clusters)))
+
+
+(defn pp-boxes [box1 box2]
+  (println "box1" (box-to-str box1) "box2" (box-to-str box2)))
+
 (defn cluster-boxes
-  [boxes distances]
-  (let [boxes-lookup (for [box boxes] {:box box :idx idx-unset})]
-    (:clusters
-     (reduce (fn [{:keys [clusters boxes-lookup]} connection]
-               (let [{:keys [box1 box2]} connection
-                     box1-idx (box-cluster-idx box1 boxes-lookup)
-                     box2-idx (box-cluster-idx box2 boxes-lookup)]
-                 (cond
-                   (= box1-idx box2-idx idx-unset)
-                   ;; Creates a new cluster for them two
-                   {:clusters (conj clusters [box1 box2])
-                    :boxes-lookup (->>
-                                   boxes-lookup
-                                   (filter #(not (or (= (:box %) box1) (= (:box %) box2))))
-                                   (conj [{:box box1 :idx (count clusters)}
-                                          {:box box2 :idx (count clusters)}]))}
+  ([boxes distances] (cluster-boxes boxes distances false))
+  ([boxes distances verbose?]
+   (let [boxes-lookup (for [box boxes] {:box box :idx idx-unset})]
+     (:clusters
+      (reduce (fn [{:keys [clusters boxes-lookup]} connection]
+                (let [{:keys [box1 box2]} connection
+                      box1-idx (box-cluster-idx box1 boxes-lookup)
+                      box2-idx (box-cluster-idx box2 boxes-lookup)]
+                  (when verbose?
+                    (println)
+                    (pp-clusters clusters)
+                    (pp-boxes box1 box2)
+                    (println "box1-idx" box1-idx "box2-idx" box2-idx)
+                    ;; (println "boxes-lookup" boxes-lookup)
+                    )
+                  (cond
+                    (= box1-idx box2-idx idx-unset)
+                    ;; Creates a new cluster for them two
+                    {:clusters (conj clusters [box1 box2])
+                     :boxes-lookup (->>
+                                    boxes-lookup
+                                    (filter #(not (or (= (:box %) box1) (= (:box %) box2))))
+                                    (concat [{:box box1 :idx (count clusters)}
+                                             {:box box2 :idx (count clusters)}]))}
 
-                   (= box1-idx box2-idx)
-                   ;; Ignores, it means they are in the same cluster already
-                   {:clusters clusters :boxes-lookup boxes-lookup}
+                    (= box1-idx box2-idx)
+                    ;; Ignores, it means they are in the same cluster already
+                    {:clusters clusters :boxes-lookup boxes-lookup}
 
-                   :else
-                   ;; TODO handle the case where we want to merge clusters
-                   {:clusters clusters :boxes-lookup boxes-lookup})))
-             {:clusters [] :boxes-lookup boxes-lookup}
-             distances))))
+                    (some #(= idx-unset %) [box1-idx box2-idx])
+                    ;; Add one to the cluster of the other
+                    (let [box-from (if (= box1-idx idx-unset) box1 box2)
+                          box-idx-to (max box1-idx box2-idx)
+                          ;;  _ (println "box-idx-to" box-idx-to)
+                          ]
+                      {:clusters (update
+                                  clusters
+                                  box-idx-to
+                                  conj box-from)
+                       :boxes-lookup (->>
+                                      boxes-lookup
+                                      (filter #(not (or (= (:box %) box1) (= (:box %) box2))))
+                                      (concat [{:box box1 :idx box-idx-to}
+                                               {:box box2 :idx box-idx-to}]))})
+
+                    :else
+                    ;; {:clusters clusters :boxes-lookup boxes-lookup}
+                    ;; Merge the clusters, arbritrarly merge it to the box1 cluster
+                    (let [box-idx-to box1-idx
+                          box-idx-from box2-idx
+                          cluster-from (get clusters box-idx-from)]
+                      {:clusters (->
+                                  clusters
+                                  ;; Empty the old list, keep it there, so the idx don't shift
+                                  (assoc box-idx-from [])
+                                  ;; Update the "to" list
+                                  (update
+                                   box-idx-to
+                                   concat cluster-from))
+                       :boxes-lookup (merged-boxes-lookup boxes-lookup cluster-from box-idx-to)}))))
+              {:clusters [] :boxes-lookup boxes-lookup}
+              distances)))))
 
 
 (defn result-from-clusters
@@ -92,13 +149,13 @@
    clusters
    (sort #(> (count %1) (count %2)))
    (take 3)
-   (map count)
+   (map (fn [x] (max 1 (count x))))
    (reduce *)))
 
 
 (defn crack-the-code
-  ([lines] (crack-the-code false))
-  ([lines verbose?]
+  ([lines limit] (crack-the-code lines limit false))
+  ([lines limit verbose?]
    (let [boxes (->>
                 lines
                 (map #(str/split % #","))
@@ -108,16 +165,14 @@
                     distances-get
                     (filter
                      #(not (or (= (:box1 %) (:box2 %))
-                               (neg? (:dist %)))))
+                               ;; Random criteria to remove one of each dist pairs
+                               (> (hash (:box1 %)) (hash (:box2 %))))))
                     (sort-by :dist)
-                    (map #(select-keys % [:box1 :box2])))
-         clusters (cluster-boxes boxes distances)]
+                    (map #(select-keys % [:box1 :box2]))
+                    (take limit))
+         clusters (cluster-boxes boxes distances verbose?)]
+     (println "Data prepared, let's start")
      (result-from-clusters clusters))))
-
-;; Next: creates a par of boxes [a b] sorted by the distance between
-;; all boxes. To do this creates a connection between all boxes
-;; sort by x (< x is the first box)
-;; sort all based on the square distance
 
 
 ;; ------------------------------------------------------------
@@ -139,7 +194,7 @@
 ;; ------------------------------------------------------------
 
 (defn test-sample-data []
-  (is 40 (crack-the-code (input test-file) true)))
+  (is 40 (crack-the-code (input test-file) 10 true)))
 
 (test-sample-data)
 
@@ -148,9 +203,9 @@
 ;; ------------------------------------------------------------
 
 (defn main []
-  (time (println "Result for day 8:" (crack-the-code (input input-file) true))))
+  (time (println "Result for day 8:" (crack-the-code (input input-file) 1000))))
 
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

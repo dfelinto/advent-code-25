@@ -65,4 +65,4 @@ I'm also reading the Brave and Bold Clojure book and it seems great so far. I ca
 - [x] [Day 7](https://adventofcode.com/2025/day/7)
 - [x] Day 7.2
 - [x] [Day 8](https://adventofcode.com/2025/day/8)
-- [ ] Day 8.2
+- [x] Day 8.2

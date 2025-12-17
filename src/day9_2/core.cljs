@@ -1,0 +1,189 @@
+
+(ns day9-2.core
+  (:require
+   [babashka.fs :as fs]
+   [clojure.string :as str]))
+
+
+(def input-file "inputs/day9.txt")
+(def test-file  "inputs/day9-test.txt")
+
+
+(defn is [expected got] (if (= expected got) true (println "Error: expected:" expected ", got:" got)))
+
+
+(defn parse-corners
+  "1,2 -> {:x 1 :y 2}"
+  [line] (->>
+          (str/split line #",")
+          (map parse-long)
+          (zipmap [:x :y])))
+
+(defn area [from to]
+  ;;   (println from to)
+  (let [width (inc (abs (- (:x from) (:x to))))
+        height (inc (abs (- (:y from) (:y to))))
+        square-area (* width height)]
+    ;; (println square-area)
+    square-area))
+
+
+(defn calculate-areas [corners]
+  (for [from-idx (range (count corners))
+        to-idx (range (inc from-idx) (count corners))]
+    (let [from (corners from-idx)
+          to (corners to-idx)]
+      {:area (area from to) :from from :to to})))
+
+
+(defn xor [a? b?]
+  (cond
+    (and a? b?)
+    false
+    (or a? b?)
+    true
+    :else
+    false))
+
+
+(defn connect-corners [corners]
+  (reduce (fn [acc _]
+            (let [{:keys [x y]} (last acc)
+                  prev-corner (last (butlast acc))
+                  next-corner (first (filter #(and (not (= prev-corner %))
+                                                   (xor (= x (:x %))
+                                                        (= y (:y %)))) corners))]
+              ;; (println (last acc) next-corner)
+              (conj
+               acc
+               next-corner)))
+          [(first corners)]
+          (range (dec (count corners)))))
+
+(defn min-max [c1 c2]
+  (let [min-x (min (:x c1) (:x c2))
+        min-y (min (:y c1) (:y c2))
+        max-x (max (:x c1) (:x c2))
+        max-y (max (:y c1) (:y c2))]
+    [min-x min-y max-x max-y]))
+
+
+(def mix-max-optimized (memoize min-max))
+
+
+(defn is-outside?
+  ([c1 c2 p] (is-outside? c1 c2 p false))
+  ([c1 c2 p verbose?]
+   (let [[min-x  min-y  max-x  max-y] (mix-max-optimized c1 c2)
+         x (:x p)
+         y (:y p)
+         c1' {:x (:x c1) :y (:y c2)}
+         c2' {:x (:x c2) :y (:y c1)}]
+     (when verbose? (println c1 c2 "p" p))
+     (or
+      ;; treat the corners as if they were outside
+      (= p c1)
+      (= p c2)
+      (= p c1')
+      (= p c2')
+      (< x min-x)
+      (> x max-x)
+      (< y min-y)
+      (> y max-y)))))
+
+
+;; (def is-outside? (complement is-inside?))
+
+(defn is-valid-connection?
+  "The connection is valid if no points is inside the rectangle"
+  [perimeter areas]
+  (let [c1 (:from areas)
+        c2 (:to areas)
+        ;; verbose? (and (= c1 {:x 9 :y 5})
+        ;;               (= c2 {:x 2 :y 3}))
+        ;; verbose? (= 40 (:area areas))
+        ]
+    ;; (when verbose? (println "is-valid-connection?" areas))
+    (every? #(is-outside? c1 c2 % false) perimeter)))
+
+
+(defn get-chr [point perimeter]
+  (cond
+    (first (filter #(= point %) perimeter))
+    ;; (str (.indexOf perimeter point))
+    "#"
+
+    ;; (is-outside? {:x 9 :y 7} {:x 2 :y 3} point)
+    ;; "."
+
+    :else
+    "."))
+
+
+(defn pp-debug [perimeter]
+  (let [width (+ 2 ;; pad
+                 (inc (apply max (mapv :x perimeter))))
+        height (+ 1 ;; pad
+                  (inc (apply max (mapv :y perimeter))))
+        grid (for [y (range height)
+                   x (range width)]
+               (str
+                (get-chr {:x x :y y} perimeter)
+                (when (= x (dec width)) "\n")))]
+    (println width height)
+    (println (apply str grid))))
+
+
+(defn crack-the-code
+  ([lines] (crack-the-code lines false))
+  ([lines verbose?]
+   (let [corners (->> lines
+                      (map parse-corners)
+                      vec)
+         perimeter (connect-corners corners)
+         areas (calculate-areas corners)]
+     (when verbose? (pp-debug perimeter))
+     (->>
+      areas
+      (filter (partial is-valid-connection? perimeter))
+      (mapv :area)
+      (apply max)
+      ;;  (println perimeter)
+      ;;  (println (count perimeter))
+      ))))
+
+
+;; ------------------------------------------------------------
+;; File processing
+;; ------------------------------------------------------------
+(defn input
+  [filepath]
+  (println "Reading sequence from file:" filepath)
+  (->>
+   filepath
+   (fs/absolutize)
+   str
+   slurp
+   (str/split-lines)))
+
+
+;; ------------------------------------------------------------
+;; Scenario Test
+;; ------------------------------------------------------------
+
+(defn test-sample-data []
+  (is 24 (crack-the-code (input test-file) false)))
+
+(test-sample-data)
+
+;; ------------------------------------------------------------
+;; Main
+;; ------------------------------------------------------------
+
+(defn main []
+  (time (println "Result for day 9:" (crack-the-code (input input-file) true))))
+
+
+;; There is no way to process the output of (run-tests) to know if it fails.
+;; so we keep (main) manually commented out until all tests pass
+(main)

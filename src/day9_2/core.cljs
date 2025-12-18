@@ -175,17 +175,18 @@
    (let [corners (->> lines
                       (map parse-corners)
                       vec)
-         ;;  perimeter (connect-corners corners)
          perimeter corners ;; as it turned out, the perimeter and corners are the same
-         areas (calculate-areas corners)]
-     ;;  (is corners (connect-corners corners))
-     (when verbose? (pp-debug perimeter))
-     ;;  (is (count corners) (count perimeter))
-     (->>
-      areas
-      (filter (partial is-valid-connection? perimeter))
-      (mapv :area)
-      (apply max)))))
+         areas (calculate-areas corners)
+         _ (when verbose? (pp-debug perimeter))
+         larger-area (->>
+                      areas
+                      (filter (partial is-valid-connection? perimeter))
+                      (sort-by :area)
+                      ;; (mapv :area)
+                      ;; (apply max)
+                      (last))]
+     (println "Larger area: " larger-area)
+     (:area larger-area))))
 
 
 ;; ------------------------------------------------------------

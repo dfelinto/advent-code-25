@@ -19,6 +19,7 @@
           (map parse-long)
           (zipmap [:x :y])))
 
+
 (defn area [from to]
   ;;   (println from to)
   (let [width (inc (abs (- (:x from) (:x to))))
@@ -44,21 +45,6 @@
     true
     :else
     false))
-
-
-;; (defn connect-corners [corners]
-;;   (reduce (fn [acc _]
-;;             (let [{:keys [x y]} (last acc)
-;;                   prev-corner (last (butlast acc))
-;;                   next-corner (first (filter #(and (not (= prev-corner %))
-;;                                                    (xor (= x (:x %))
-;;                                                         (= y (:y %)))) corners))]
-;;               ;; (println (last acc) next-corner)
-;;               (conj
-;;                acc
-;;                next-corner)))
-;;           [(first corners)]
-;;           (range (dec (count corners)))))
 
 
 (defn min-max [c1 c2]
@@ -92,19 +78,64 @@
       (< y min-y)
       (> y max-y)))))
 
+(def is-inside? (complement is-outside?))
+
+(defn perimeter-segments [perimeter]
+  (partition 2 1 (conj perimeter (first perimeter))))
+
+
+(def perimeter-segments-cached (memoize perimeter-segments))
+
+
+(defn vertical? [[p1 p2]] (= (:x p1) (:x p2)))
+
+
+(defn intersect? [[seg1 seg2]]
+  (let [[p1 p2] seg1
+        [p3 p4] seg2
+        x-min (apply min (mapv :x [p1 p2]))
+        x-max (apply max (mapv :x [p1 p2]))
+        x (:x p3)
+        y-min (apply min (mapv :y [p3 p4]))
+        y-max (apply max (mapv :y [p3 p4]))
+        y (:y p1)]
+    (cond
+      ;; Parallel lines don't intersect
+      (= (vertical? seg1) (vertical? seg2))
+      false
+
+      (and (> x x-min) (< x x-max)
+           (> y y-min) (< y y-max))
+      true
+
+      :else
+      false)))
+
+
+(defn segments [c1 c3]
+  (let [c2 {:x (:x c3) :y (:y c1)}
+        c4 {:x (:x c1) :y (:y c3)}]
+    (partition 2 1 [c1 c2 c3 c4 c1])))
+
 
 (defn is-valid-connection?
   "The connection is valid if no points from the perimeter are inside the rectangle"
-  ;; this function is not correct, it can break in a few scenarios
   [perimeter areas]
   (let [c1 (:from areas)
         c2 (:to areas)
-        ;; verbose? (and (= c1 {:x 9 :y 5})
-        ;;               (= c2 {:x 2 :y 3}))
-        ;; verbose? (= 40 (:area areas))
-        ]
-    ;; (when verbose? (println "is-valid-connection?" areas))
-    (every? #(is-outside? c1 c2 % false) perimeter)))
+        intersection-pairs (for [x (segments c1 c2)
+                                 y (perimeter-segments-cached perimeter)] [x y])]
+    (cond
+      ;; If any point is inside we already know it is invalid
+      (some #(is-inside? c1 c2 % false) perimeter)
+      false
+
+      ;; Check for any segment intersecting the rectangle.
+      (some #(intersect? %) intersection-pairs)
+      false
+
+      :else
+      true)))
 
 
 (defn get-chr [point perimeter]
@@ -174,7 +205,7 @@
 (defn test-sample-data []
   (is 24 (crack-the-code (input test-file) true)))
 
-;; (test-sample-data)
+(test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

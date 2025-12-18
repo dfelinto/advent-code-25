@@ -151,18 +151,22 @@
     "."))
 
 
+(defn get-chr-fast [point perimeter-set]
+  (if (contains? perimeter-set point)
+    "#" "."))
+
+
 (defn pp-debug [perimeter]
   (let [width (+ 2 ;; pad
                  (inc (apply max (mapv :x perimeter))))
         height (+ 1 ;; pad
                   (inc (apply max (mapv :y perimeter))))
-        grid (for [y (range height)
-                   x (range width)]
-               (str
-                (get-chr {:x x :y y} perimeter)
-                (when (= x (dec width)) "\n")))]
+        perimeter-set (set perimeter)]
     (println width height)
-    (println (apply str grid))))
+    (doall
+     (for [y (range height)]
+       (println
+        (reduce str (mapv #(get-chr-fast {:x % :y y} perimeter-set) (range width))))))))
 
 
 (defn crack-the-code

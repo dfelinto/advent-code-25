@@ -141,8 +141,8 @@
 (defn get-chr [point perimeter]
   (cond
     (first (filter #(= point %) perimeter))
-    (str (.indexOf perimeter point))
-    ;; "#"
+    ;; (str (.indexOf perimeter point))
+    "#"
 
     ;; (is-outside? {:x 9 :y 7} {:x 2 :y 3} point)
     ;; "."
@@ -217,9 +217,12 @@
 ;; ------------------------------------------------------------
 
 (defn main []
-  (time (println "Result for day 9.2:" (crack-the-code (input input-file) false))))
+  (time (println "Result for day 9.2:" (crack-the-code (input input-file) true))))
 
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
 (main)
+
+;; current (wrong) larger area:
+;; {:area 4502966061, :from {:x 17482, :y 84618}, :to {:x 82284, :y 15132}}

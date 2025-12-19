@@ -1,4 +1,31 @@
+;; Forgive me Father, for I've sinned!
 
+;; I didn't want to carve in and google the formula to check if
+;; my points were inside a polygon. Now that I finished and looked
+;; at other people answers ... yes it did ring a bell (the nice
+;; formula of ray casting in a direction and see if you find odd or even
+;; segments).
+
+;; I was going mad though, sheets and sheets of paper went by.
+
+;; So I decided to throw the data at Blender (Geometry Nodes in particular).
+;; What a naughty shape. No xmas gifts for you.
+
+;; After trying to think of a few ways to decoupe the geometry into rectangles,
+;; I decided for a more radical approach. One of my rules here is that Santa doesn't
+;; care about algorithms, Santa wants my help, it doesn't matter what.
+
+;; So I broken down the data into two: top hemisphere and bottom hemisphere.
+
+;; For each hemisphere I had a pinned corner that I knew by looking at the data
+;; that it had to be on the final rectangle. From here it was a matter of using
+;; my early formulas for discarding rectangles (the naïves of them all, the one
+;; that discard the rectangle if any of the remaining corners is inside of it).
+
+;; And voilá!
+         
+;; What I can do, is to find the two longest segments and use them to determine
+;; my top-vert and bottom-vert. This way this can be used for anyone's set of data.
 (ns day9-2.core
   (:require
    [babashka.fs :as fs]
@@ -7,6 +34,10 @@
 
 (def input-file "inputs/day9.txt")
 (def test-file  "inputs/day9-test.txt")
+
+
+(def top-vert {:x 94997 :y 50126})
+(def bottom-vert {:x 94997 :y 48641})
 
 
 (defn is [expected got] (if (= expected got) true (println "Error: expected:" expected ", got:" got)))
@@ -89,7 +120,6 @@
 
 
 (defn vertical? [[p1 p2]] (= (:x p1) (:x p2)))
-
 
 (defn op' [min-max key seg]
   (apply min-max (mapv key seg)))
@@ -231,9 +261,6 @@
 ;; ------------------------------------------------------------
 ;; Main Function
 ;; ------------------------------------------------------------
-
-(def top-vert {:x 94997 :y 50126})
-(def bottom-vert {:x 94997 :y 48641})
 
 
 (defn get-top-corners [corners]

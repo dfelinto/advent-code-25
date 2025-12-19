@@ -81,7 +81,8 @@
 (def is-inside? (complement is-outside?))
 
 (defn perimeter-segments [perimeter]
-  (partition 2 1 (conj perimeter (first perimeter))))
+  (partition 2 1 perimeter))
+;; (partition 2 1 (conj perimeter (first perimeter))))
 
 
 (def perimeter-segments-cached (memoize perimeter-segments))
@@ -90,26 +91,36 @@
 (defn vertical? [[p1 p2]] (= (:x p1) (:x p2)))
 
 
+(defn op' [min-max key seg]
+  (apply min-max (mapv key seg)))
+
+(def op (memoize op'))
+
 (defn intersect? [[seg1 seg2]]
-  (let [[p1 p2] seg1
-        [p3 p4] seg2
-        x-min (apply min (mapv :x [p1 p2]))
-        x-max (apply max (mapv :x [p1 p2]))
-        x (:x p3)
-        y-min (apply min (mapv :y [p3 p4]))
-        y-max (apply max (mapv :y [p3 p4]))
-        y (:y p1)]
-    (cond
-      ;; Parallel lines don't intersect
-      (= (vertical? seg1) (vertical? seg2))
-      false
+  (cond
+    ;; Parallel lines don't intersect
+    (= (vertical? seg1) (vertical? seg2))
+    true
 
-      (and (> x x-min) (< x x-max)
-           (> y y-min) (< y y-max))
-      true
+    ;; Check if both points of seg2 are outside
+    ;; seg1 points, but within the vertical range
+    (vertical? seg1)
+    (and
+     ;; check if they are outside in opposite sides
+     (< (op min :x seg2) (op min :x seg1))
+     (> (op max :x seg2) (op max :x seg1))
+     ;; check if they are within range
+     (> (op min :y seg2) (op min :y seg1))
+     (< (op max :y seg2) (op max :y seg1)))
 
-      :else
-      false)))
+    :else
+    (and
+     ;; check if they are outside in opposite sides
+     (< (op min :y seg2) (op min :y seg1))
+     (> (op max :y seg2) (op max :y seg1))
+     ;; check if they are within range
+     (> (op min :x seg2) (op min :x seg1))
+     (< (op max :x seg2) (op max :x seg1)))))
 
 
 (defn segments [c1 c3]
@@ -120,11 +131,17 @@
 
 (defn is-valid-connection?
   "The connection is valid if no points from the perimeter are inside the rectangle"
-  [perimeter areas]
-  (let [c1 (:from areas)
-        c2 (:to areas)
+  [perimeter area]
+  (let [c1 (:from area)
+        c2 (:to area)
         intersection-pairs (for [x (segments c1 c2)
-                                 y (perimeter-segments-cached perimeter)] [x y])]
+                                 y (perimeter-segments-cached perimeter)] [x y])
+        intersection-pairs [(second intersection-pairs)]]
+    ;; (println (count intersection-pairs))
+    ;; (println (count (segments c1 c2)))
+    ;; (println (count (perimeter-segments-cached perimeter)))
+    ;; (println (perimeter-segments-cached perimeter))
+    ;; (println intersection-pairs)
     (cond
       ;; If any point is inside we already know it is invalid
       (some #(is-inside? c1 c2 % false) perimeter)
@@ -136,6 +153,14 @@
 
       :else
       true)))
+
+
+(defn debug-my-code []
+  (let [area {:area 4502966061, :from {:x 17482, :y 84618}, :to {:x 82284, :y 15132}}
+        perimeter [{:x 1738 :y 48641} {:x 94997 :y 48641}]]
+    (println (is-valid-connection? perimeter area))))
+
+;; (debug-my-code)
 
 
 (defn get-chr [point perimeter]
@@ -217,7 +242,7 @@
 ;; ------------------------------------------------------------
 
 (defn main []
-  (time (println "Result for day 9.2:" (crack-the-code (input input-file) true))))
+  (time (println "Result for day 9.2:" (crack-the-code (input input-file) false))))
 
 
 ;; There is no way to process the output of (run-tests) to know if it fails.

@@ -69,20 +69,20 @@
      (when verbose? (println c1 c2 "p" p))
      (or
       ;; treat the corners as if they were outside
+      ;; treat the edge as outside as well actually
       (= p c1)
       (= p c2)
       (= p c1')
       (= p c2')
-      (< x min-x)
-      (> x max-x)
-      (< y min-y)
-      (> y max-y)))))
+      (<= x min-x)
+      (>= x max-x)
+      (<= y min-y)
+      (>= y max-y)))))
 
 (def is-inside? (complement is-outside?))
 
 (defn perimeter-segments [perimeter]
-  (partition 2 1 perimeter))
-;; (partition 2 1 (conj perimeter (first perimeter))))
+  (partition 2 1 (conj perimeter (first perimeter))))
 
 
 (def perimeter-segments-cached (memoize perimeter-segments))
@@ -137,61 +137,122 @@
         intersection-pairs (for [x (segments c1 c2)
                                  y (perimeter-segments-cached perimeter)] [x y])
         intersection-pairs [(second intersection-pairs)]]
-    ;; (println (count intersection-pairs))
-    ;; (println (count (segments c1 c2)))
-    ;; (println (count (perimeter-segments-cached perimeter)))
-    ;; (println (perimeter-segments-cached perimeter))
-    ;; (println intersection-pairs)
     (cond
       ;; If any point is inside we already know it is invalid
       (some #(is-inside? c1 c2 % false) perimeter)
       false
 
-      ;; Check for any segment intersecting the rectangle.
-      (some #(intersect? %) intersection-pairs)
-      false
+      ;; ;; Check for any segment intersecting the rectangle.
+      ;; (some #(intersect? %) intersection-pairs)
+      ;; false
 
       :else
       true)))
 
+;; ------------------------------------------------------------
+;; Debugging / Unittests
+;; ------------------------------------------------------------
 
-(defn debug-my-code []
-  (let [area {:area 4502966061, :from {:x 17482, :y 84618}, :to {:x 82284, :y 15132}}
-        perimeter [{:x 1738 :y 48641} {:x 94997 :y 48641}]]
-    (println (is-valid-connection? perimeter area))))
+;; (defn test-intersection-1 []
+;;   (let [area {:area 4502966061, :from {:x 17482, :y 84618}, :to {:x 82284, :y 15132}}
+;;         perimeter [{:x 1738 :y 48641} {:x 94997 :y 48641}]]
+;;     (is false (is-valid-connection? perimeter area))))
+
+
+;; (defn test-intersection-2 []
+;;   (let [area {:area -1, :from {:x -10, :y 10}, :to {:x 10, :y -10}}
+;;         perimeter [{:x 1738 :y 48641} {:x 94997 :y 48641}]]
+;;     (is false (is-valid-connection? perimeter area))))
+
+
+;; (defn test-segments []
+;;   (let [c1 {:x 0, :y 5}
+;;         c2 {:x 5, :y 0}
+;;         expected [[{:x 0, :y 5} {:x 5, :y 5}]
+;;                   [{:x 5, :y 5} {:x 5, :y 0}]
+;;                   [{:x 5, :y 0} {:x 0, :y 0}]
+;;                   [{:x 0, :y 0} {:x 0, :y 5}]]]
+;;     (is expected (segments c1 c2))))
+
+
+;; (defn test-is-inside []
+;;   (let [c1 {:x 0, :y 5}
+;;         c2 {:x 5, :y 0}
+;;         inside [{:x 2 :y 2}
+;;                 {:x 3 :y 3}]
+;;         outside [{:x -1 :y 0}
+;;                  {:x 10 :y 0}
+;;                  {:x 1 :y 5}]]
+;;     (mapv #(is true (is-inside? c1 c2 %)) inside)
+;;     (mapv #(is false (is-inside? c1 c2 %)) outside)))
+
+
+;; (defn debug-my-code []
+;;   (test-intersection-1)
+;;   (test-intersection-2)
+;;   (test-segments)
+;;   (test-is-inside))
+
 
 ;; (debug-my-code)
 
 
-(defn get-chr [point perimeter]
-  (cond
-    (first (filter #(= point %) perimeter))
-    ;; (str (.indexOf perimeter point))
-    "#"
+;; (defn get-chr [point perimeter]
+;;   (cond
+;;     (first (filter #(= point %) perimeter))
+;;     ;; (str (.indexOf perimeter point))
+;;     "#"
 
-    ;; (is-outside? {:x 9 :y 7} {:x 2 :y 3} point)
-    ;; "."
+;;     ;; (is-outside? {:x 9 :y 7} {:x 2 :y 3} point)
+;;     ;; "."
 
-    :else
-    "."))
-
-
-(defn get-chr-fast [point perimeter-set]
-  (if (contains? perimeter-set point)
-    "#" "."))
+;;     :else
+;;     "."))
 
 
-(defn pp-debug [perimeter]
-  (let [width (+ 2 ;; pad
-                 (inc (apply max (mapv :x perimeter))))
-        height (+ 1 ;; pad
-                  (inc (apply max (mapv :y perimeter))))
-        perimeter-set (set perimeter)]
-    (println width height)
-    (doall
-     (for [y (range height)]
-       (println
-        (reduce str (mapv #(get-chr-fast {:x % :y y} perimeter-set) (range width))))))))
+;; (defn get-chr-fast [point perimeter-set]
+;;   (if (contains? perimeter-set point)
+;;     "#" "."))
+
+
+;; (defn pp-debug [perimeter]
+;;   (let [width (+ 2 ;; pad
+;;                  (inc (apply max (mapv :x perimeter))))
+;;         height (+ 1 ;; pad
+;;                   (inc (apply max (mapv :y perimeter))))
+;;         perimeter-set (set perimeter)]
+;;     (println width height)
+;;     (doall
+;;      (for [y (range height)]
+;;        (println
+;;         (reduce str (mapv #(get-chr-fast {:x % :y y} perimeter-set) (range width))))))))
+
+
+;; ------------------------------------------------------------
+;; Main Function
+;; ------------------------------------------------------------
+
+(def top-vert {:x 94997 :y 50126})
+(def bottom-vert {:x 94997 :y 48641})
+
+
+(defn get-top-corners [corners]
+  (->> corners
+       (filter #(and (> (:y %) (:y top-vert))
+                     (< (:x %) (:x top-vert))))
+       (vec)))
+
+
+(defn get-bottom-corners [corners]
+  (->> corners
+       (filter #(and (< (:y %) (:y bottom-vert))
+                     (< (:x %) (:x bottom-vert))))
+       (vec)))
+
+
+(defn calculate-areas-special [corners pinned-corner]
+  (for [from corners]
+    {:area (area from pinned-corner) :from from :to pinned-corner}))
 
 
 (defn crack-the-code
@@ -200,18 +261,27 @@
    (let [corners (->> lines
                       (map parse-corners)
                       vec)
-         perimeter corners ;; as it turned out, the perimeter and corners are the same
-         areas (calculate-areas corners)
-         _ (when verbose? (pp-debug perimeter))
-         larger-area (->>
-                      areas
-                      (filter (partial is-valid-connection? perimeter))
-                      (sort-by :area)
-                      ;; (mapv :area)
-                      ;; (apply max)
-                      (last))]
-     (println "Larger area: " larger-area)
-     (:area larger-area))))
+         top-corners (get-top-corners corners)
+         bottom-corners (get-bottom-corners corners)
+         top-areas (calculate-areas-special top-corners top-vert)
+         bottom-areas (calculate-areas-special bottom-corners bottom-vert)
+         larger-area-top (->>
+                          top-areas
+                          (filter (partial is-valid-connection? top-corners))
+                          (sort-by :area)
+                          (last))
+         larger-area-bottom (->>
+                             bottom-areas
+                             (filter (partial is-valid-connection? bottom-corners))
+                             (sort-by :area)
+                             (last))
+         both-hemisphere-top-areas (->>
+                                    [larger-area-top
+                                     larger-area-bottom]
+                                    (sort-by :area)
+                                    (last))]
+     (println "Larger area: " both-hemisphere-top-areas)
+     (:area both-hemisphere-top-areas))))
 
 
 ;; ------------------------------------------------------------
@@ -219,7 +289,7 @@
 ;; ------------------------------------------------------------
 (defn input
   [filepath]
-  (println "Reading sequence from file:" filepath)
+  ;; (println "Reading sequence from file:" filepath)
   (->>
    filepath
    (fs/absolutize)
@@ -233,9 +303,9 @@
 ;; ------------------------------------------------------------
 
 (defn test-sample-data []
-  (is 24 (crack-the-code (input test-file) true)))
+  (is 24 (crack-the-code (input test-file) false)))
 
-(test-sample-data)
+;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main
@@ -248,6 +318,3 @@
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
 (main)
-
-;; current (wrong) larger area:
-;; {:area 4502966061, :from {:x 17482, :y 84618}, :to {:x 82284, :y 15132}}

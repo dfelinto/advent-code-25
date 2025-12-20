@@ -16,12 +16,14 @@
   "(3) (1,3) (2) (2,3) (0,2) (0,1) -> [[3] [2] [1 3] [2 3] [0 2] [0 1]]
    Note that the result is sorted on length of groups"
   [buttons]
-  (let [buttons' (->> buttons
-                      (re-seq #"\(.+?\)"))]
-    (sort-by count (map #(map parse-long
-                              (clojure.string/split
-                               (subs % 1 (dec (count %)))
-                               #",")) buttons'))))
+  (->>
+   buttons
+   (re-seq #"\(.+?\)")
+   (map #(mapv parse-long
+               (str/split
+                (subs % 1 (dec (count %)))
+                #",")))
+   (sort-by count)))
 
 
 "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"

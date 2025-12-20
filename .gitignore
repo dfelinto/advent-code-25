@@ -9,6 +9,7 @@
 /package-lock.json
 /package.json
 .DS_Store
+*.blend1
 /inputs/day1.txt
 /inputs/day2.txt
 /inputs/day3.txt

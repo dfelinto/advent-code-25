@@ -26,6 +26,8 @@
          
 ;; What I can do, is to find the two longest segments and use them to determine
 ;; my top-vert and bottom-vert. This way this can be used for anyone's set of data.
+;;
+;; edit: done!
 (ns day9-2.core
   (:require
    [babashka.fs :as fs]
@@ -33,14 +35,6 @@
 
 
 (def input-file "inputs/day9.txt")
-(def test-file  "inputs/day9-test.txt")
-
-
-(def top-vert {:x 94997 :y 50126})
-(def bottom-vert {:x 94997 :y 48641})
-
-
-(defn is [expected got] (if (= expected got) true (println "Error: expected:" expected ", got:" got)))
 
 
 (defn parse-corners
@@ -51,31 +45,11 @@
           (zipmap [:x :y])))
 
 
-(defn area [from to]
-  ;;   (println from to)
+(defn calculate-area [from to]
   (let [width (inc (abs (- (:x from) (:x to))))
         height (inc (abs (- (:y from) (:y to))))
         square-area (* width height)]
-    ;; (println square-area)
     square-area))
-
-
-(defn calculate-areas [corners]
-  (for [from-idx (range (count corners))
-        to-idx (range (inc from-idx) (count corners))]
-    (let [from (corners from-idx)
-          to (corners to-idx)]
-      {:area (area from to) :from from :to to})))
-
-
-(defn xor [a? b?]
-  (cond
-    (and a? b?)
-    false
-    (or a? b?)
-    true
-    :else
-    false))
 
 
 (defn min-max [c1 c2]
@@ -86,13 +60,59 @@
     [min-x min-y max-x max-y]))
 
 
-(def min-max-optimized (memoize min-max))
+(def min-max' (memoize min-max))
+
+
+(defn perimeter-segments [perimeter]
+  (partition 2 1 (conj perimeter (first perimeter))))
+
+
+;; (defn vertical? [[p1 p2]] (= (:x p1) (:x p2)))
+
+;; (defn op' [min-max key seg]
+;;   (apply min-max (mapv key seg)))
+
+;; (def op (memoize op'))
+
+;; (defn intersect? [[seg1 seg2]]
+;;   (cond
+;;     ;; Parallel lines don't intersect
+;;     (= (vertical? seg1) (vertical? seg2))
+;;     true
+
+;;     ;; Check if both points of seg2 are outside
+;;     ;; seg1 points, but within the vertical range
+;;     (vertical? seg1)
+;;     (and
+;;      ;; check if they are outside in opposite sides
+;;      (< (op min :x seg2) (op min :x seg1))
+;;      (> (op max :x seg2) (op max :x seg1))
+;;      ;; check if they are within range
+;;      (> (op min :y seg2) (op min :y seg1))
+;;      (< (op max :y seg2) (op max :y seg1)))
+
+;;     :else
+;;     (and
+;;      ;; check if they are outside in opposite sides
+;;      (< (op min :y seg2) (op min :y seg1))
+;;      (> (op max :y seg2) (op max :y seg1))
+;;      ;; check if they are within range
+;;      (> (op min :x seg2) (op min :x seg1))
+;;      (< (op max :x seg2) (op max :x seg1)))))
+
+
+;; (defn segments [c1 c3]
+;;   (let [c2 {:x (:x c3) :y (:y c1)}
+;;         c4 {:x (:x c1) :y (:y c3)}]
+;;     (partition 2 1 [c1 c2 c3 c4 c1])))
+
+
 
 
 (defn is-outside?
   ([c1 c2 p] (is-outside? c1 c2 p false))
   ([c1 c2 p verbose?]
-   (let [[min-x  min-y  max-x  max-y] (min-max-optimized c1 c2)
+   (let [[min-x  min-y  max-x  max-y] (min-max' c1 c2)
          x (:x p)
          y (:y p)
          c1' {:x (:x c1) :y (:y c2)}
@@ -110,78 +130,24 @@
       (<= y min-y)
       (>= y max-y)))))
 
+
 (def is-inside? (complement is-outside?))
-
-(defn perimeter-segments [perimeter]
-  (partition 2 1 (conj perimeter (first perimeter))))
-
-
-(def perimeter-segments-cached (memoize perimeter-segments))
-
-
-(defn vertical? [[p1 p2]] (= (:x p1) (:x p2)))
-
-(defn op' [min-max key seg]
-  (apply min-max (mapv key seg)))
-
-(def op (memoize op'))
-
-(defn intersect? [[seg1 seg2]]
-  (cond
-    ;; Parallel lines don't intersect
-    (= (vertical? seg1) (vertical? seg2))
-    true
-
-    ;; Check if both points of seg2 are outside
-    ;; seg1 points, but within the vertical range
-    (vertical? seg1)
-    (and
-     ;; check if they are outside in opposite sides
-     (< (op min :x seg2) (op min :x seg1))
-     (> (op max :x seg2) (op max :x seg1))
-     ;; check if they are within range
-     (> (op min :y seg2) (op min :y seg1))
-     (< (op max :y seg2) (op max :y seg1)))
-
-    :else
-    (and
-     ;; check if they are outside in opposite sides
-     (< (op min :y seg2) (op min :y seg1))
-     (> (op max :y seg2) (op max :y seg1))
-     ;; check if they are within range
-     (> (op min :x seg2) (op min :x seg1))
-     (< (op max :x seg2) (op max :x seg1)))))
-
-
-(defn segments [c1 c3]
-  (let [c2 {:x (:x c3) :y (:y c1)}
-        c4 {:x (:x c1) :y (:y c3)}]
-    (partition 2 1 [c1 c2 c3 c4 c1])))
-
 
 (defn is-valid-connection?
   "The connection is valid if no points from the perimeter are inside the rectangle"
   [perimeter area]
   (let [c1 (:from area)
-        c2 (:to area)
-        intersection-pairs (for [x (segments c1 c2)
-                                 y (perimeter-segments-cached perimeter)] [x y])
-        intersection-pairs [(second intersection-pairs)]]
-    (cond
-      ;; If any point is inside we already know it is invalid
-      (some #(is-inside? c1 c2 % false) perimeter)
+        c2 (:to area)]
+    (if
+     (some #(is-inside? c1 c2 %) perimeter)
       false
-
-      ;; ;; Check for any segment intersecting the rectangle.
-      ;; (some #(intersect? %) intersection-pairs)
-      ;; false
-
-      :else
       true)))
 
 ;; ------------------------------------------------------------
 ;; Debugging / Unittests
 ;; ------------------------------------------------------------
+
+;; (defn is [expected got] (if (= expected got) true (println "Error: expected:" expected ", got:" got)))
 
 ;; (defn test-intersection-1 []
 ;;   (let [area {:area 4502966061, :from {:x 17482, :y 84618}, :to {:x 82284, :y 15132}}
@@ -263,14 +229,14 @@
 ;; ------------------------------------------------------------
 
 
-(defn get-top-corners [corners]
+(defn get-top-corners [corners top-vert]
   (->> corners
        (filter #(and (> (:y %) (:y top-vert))
                      (< (:x %) (:x top-vert))))
        (vec)))
 
 
-(defn get-bottom-corners [corners]
+(defn get-bottom-corners [corners bottom-vert]
   (->> corners
        (filter #(and (< (:y %) (:y bottom-vert))
                      (< (:x %) (:x bottom-vert))))
@@ -279,7 +245,13 @@
 
 (defn calculate-areas-special [corners pinned-corner]
   (for [from corners]
-    {:area (area from pinned-corner) :from from :to pinned-corner}))
+    {:area (calculate-area from pinned-corner) :from from :to pinned-corner}))
+
+
+(defn square-distance [[vec1 vec2]]
+  (long
+   (+ (Math/pow (- (:x vec1) (:x vec2)) 2)
+      (Math/pow (- (:y vec1) (:y vec2)) 2))))
 
 
 (defn crack-the-code
@@ -288,8 +260,16 @@
    (let [corners (->> lines
                       (map parse-corners)
                       vec)
-         top-corners (get-top-corners corners)
-         bottom-corners (get-bottom-corners corners)
+         [top-vert bottom-vert] (->>
+                                 (perimeter-segments corners)
+                                 (sort #(> (square-distance %1) (square-distance %2)))
+                                 (take 2)
+                                 ;; get the right-most corner of each of the segments
+                                 (mapv #(second (sort-by :x %)))
+                                 (sort-by :y)
+                                 (reverse))
+         top-corners (get-top-corners corners top-vert)
+         bottom-corners (get-bottom-corners corners bottom-vert)
          top-areas (calculate-areas-special top-corners top-vert)
          bottom-areas (calculate-areas-special bottom-corners bottom-vert)
          larger-area-top (->>
@@ -324,15 +304,6 @@
    slurp
    (str/split-lines)))
 
-
-;; ------------------------------------------------------------
-;; Scenario Test
-;; ------------------------------------------------------------
-
-(defn test-sample-data []
-  (is 24 (crack-the-code (input test-file) false)))
-
-;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

@@ -9,14 +9,56 @@
 (def test-file  "inputs/day10-test.txt")
 
 
-(defn is [expected got] (if (= expected got) true (println "Error: expected:" expected ", got:" got)))
+(defn is [expected got] (if (= expected got) true (println "Error, got:" got "\nExpected  :" expected)))
+
+
+(defn parse-buttons
+  "(3) (1,3) (2) (2,3) (0,2) (0,1) -> [[3] [2] [1 3] [2 3] [0 2] [0 1]]
+   Note that the result is sorted on length of groups"
+  [buttons]
+  (let [buttons' (->> buttons
+                      (re-seq #"\(.+?\)"))]
+    (sort-by count (map #(map parse-long
+                              (clojure.string/split
+                               (subs % 1 (dec (count %)))
+                               #",")) buttons'))))
+
+
+"[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
+(defn parse-line [line]
+  (let [[_ lights buttons joltage] (re-find #"\[(.*)\] (\(.*\)) \{(.*)\}" line)]
+    [(map #(if (= '\# %) 1 0) lights)
+     (parse-buttons buttons)
+     (mapv parse-long (str/split joltage #","))]))
+
+
+;; light - buttons - joltage
+(defn process-line [line]
+  (let [[lights buttons _] parse-line]
+    10))
 
 
 (defn crack-the-code
   ([lines] (crack-the-code lines false))
   ([lines verbose?]
-   10))
+   (reduce + (map process-line lines))))
 
+
+;; ------------------------------------------------------------
+;; Unittesting
+;; ------------------------------------------------------------
+
+(defn test-parse-line []
+  (let [input "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
+        expected [[0 1 1 0] [[3] [2] [1 3] [2 3] [0 2] [0 1]] [3 5 4 7]]]
+    (is expected (parse-line input))))
+
+
+(defn run-debug []
+  (test-parse-line))
+
+
+(run-debug)
 
 ;; ------------------------------------------------------------
 ;; File processing
@@ -51,4 +93,4 @@
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-(main)
+;; (main)

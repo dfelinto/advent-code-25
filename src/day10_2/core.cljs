@@ -105,7 +105,8 @@
 ;; light - buttons - joltage
 (defn process-line [line]
   (let [[_ buttons joltages] (parse-line line)
-        buttons-combinations (combine-buttons buttons (max joltages))
+        max-joltage (max joltages)
+        buttons-combinations (combine-buttons buttons max-joltage)
         result
         (reduce
          (fn [idx buttons-combinations]
@@ -113,7 +114,10 @@
              (reduced idx)
              (inc idx)))
          1
-         buttons-combinations)]
+         ;; Optimization: there is no way to find a match if the number of
+         ;; pressed buttons doesn't match the maximum joltage we need to reach
+         (drop (dec max-joltage)
+               buttons-combinations))]
     result))
 
 

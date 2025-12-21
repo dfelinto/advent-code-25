@@ -132,7 +132,8 @@
 (defn crack-the-code
   ([lines] (crack-the-code lines false))
   ([lines verbose?]
-   (reduce + (mapv process-line lines))))
+   ;; Since each line is completely independent, pmap gives a 2x speed :)
+   (reduce + (pmap process-line lines))))
 
 
 ;; ------------------------------------------------------------
@@ -265,7 +266,7 @@
   )
 
 
-(run-debug)
+;; (run-debug)
 
 ;; ------------------------------------------------------------
 ;; File processing
@@ -289,7 +290,7 @@
   (is (crack-the-code (input test-file) true)
       7))
 
-(test-sample-data)
+;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

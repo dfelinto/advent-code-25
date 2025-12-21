@@ -97,7 +97,11 @@
 
 
 (defn match-joltages? [joltages buttons]
-  (= joltages (evaluate-buttons buttons (count joltages))))
+  (let [result (= joltages (evaluate-buttons buttons (count joltages)))
+        ;; _ (println result buttons "-" joltages "vs" (evaluate-buttons buttons (count joltages)))
+        ;;
+        ]
+    result))
 
 
 ;; "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
@@ -105,18 +109,24 @@
 ;; light - buttons - joltage
 (defn process-line [line]
   (let [[_ buttons joltages] (parse-line line)
-        max-joltage (max joltages)
-        buttons-combinations (combine-buttons buttons max-joltage)
+        min-clicks (apply max joltages)
+        max-clicks 1000 ;; has to at least be higher than 256, since the data goes that high
+        ;; TODO calculate max-clicks
+        ;; _ (println line)
+        ;; _ (println max-clicks)
+        buttons-combinations (combine-buttons buttons max-clicks)
+        ;; _ (println "combination ready")
         result
         (reduce
          (fn [idx buttons-combinations]
+           ;;  (println "idx" idx)
            (if (some #(match-joltages? joltages %) buttons-combinations)
              (reduced idx)
              (inc idx)))
-         1
+         min-clicks
          ;; Optimization: there is no way to find a match if the number of
          ;; pressed buttons doesn't match the maximum joltage we need to reach
-         (drop (dec max-joltage)
+         (drop (dec min-clicks)
                buttons-combinations))]
     result))
 
@@ -257,7 +267,7 @@
   )
 
 
-(run-debug)
+;; (run-debug)
 
 ;; ------------------------------------------------------------
 ;; File processing
@@ -279,9 +289,9 @@
 
 (defn test-sample-data []
   (is (crack-the-code (input test-file) true)
-      38))
+      33))
 
-;; (test-sample-data)
+;; (time (test-sample-data))
 
 ;; ------------------------------------------------------------
 ;; Main
@@ -293,4 +303,4 @@
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

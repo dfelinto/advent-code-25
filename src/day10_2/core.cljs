@@ -110,19 +110,26 @@
 (defn process-line [line]
   (let [[_ buttons joltages] (parse-line line)
         min-clicks (apply max joltages)
-        max-clicks 1000 ;; has to at least be higher than 256, since the data goes that high
-        ;; TODO calculate max-clicks
+        ;; The smallest amount of wires a button changes
+        min-size-button (apply min (mapv count buttons))
+        ;; Round down, the worst case scenario, which is to press
+        ;; the smallest button the maximum amount of time.
+        max-clicks (long (/ (apply + joltages) min-size-button))
         ;; _ (println line)
-        ;; _ (println max-clicks)
+        ;; _ (println "min-size-button" min-size-button)
+        ;; _ (println "min" min-clicks "max" max-clicks)
         buttons-combinations (combine-buttons buttons max-clicks)
         ;; _ (println "combination ready")
         result
         (reduce
          (fn [idx buttons-combinations]
            ;;  (println "idx" idx)
-           (if (some #(match-joltages? joltages %) buttons-combinations)
-             (reduced idx)
-             (inc idx)))
+           (let [heavy-lift (pmap #(match-joltages? joltages %) buttons-combinations)]
+             (if (some true? heavy-lift) (reduced idx) (inc idx))
+             ;;  (if (some #(match-joltages? joltages %) buttons-combinations)
+             ;;    (reduced idx)
+             ;;    (inc idx))
+             ))
          min-clicks
          ;; Optimization: there is no way to find a match if the number of
          ;; pressed buttons doesn't match the maximum joltage we need to reach

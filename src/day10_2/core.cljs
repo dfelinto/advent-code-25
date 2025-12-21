@@ -57,7 +57,7 @@
         (let [prev (last acc)]
           (conj
            acc
-           (for [idx (range (- buttons-len n))]
+           (for [idx (range (buttons-len))]
              (let [head (get buttons idx)
                    tail (->>
                          prev

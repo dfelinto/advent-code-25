@@ -301,4 +301,4 @@
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

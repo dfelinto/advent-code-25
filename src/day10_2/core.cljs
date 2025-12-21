@@ -142,67 +142,67 @@
 (defn test-combine-buttons-data-2 []
   (is (combine-buttons debug-lights 2)
       '(([3] [2] [1 3] [2 3] [0 2] [0 1])
-        ([3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
-               [2 1 3] [2 2 3] [2 0 2] [2 0 1]
-               [1 3 2 3] [1 3 0 2] [1 3 0 1]
-               [2 3 0 2] [2 3 0 1]
-               [0 2 0 1]))))
+        ([3 3] [3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
+               [2 2] [2 1 3] [2 2 3] [2 0 2] [2 0 1]
+               [1 3 1 3] [1 3 2 3] [1 3 0 2] [1 3 0 1]
+               [2 3 2 3] [2 3 0 2] [2 3 0 1]
+               [0 2 0 2] [0 2 0 1]
+               [0 1 0 1]))))
 
 
 (defn test-combine-buttons-data-2-plus []
   (let [[_ buttons _] (parse-line debug-first-line)]
     (is (combine-buttons buttons 2)
         '(([3] [2] [1 3] [2 3] [0 2] [0 1])
-          ([3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
-                 [2 1 3] [2 2 3] [2 0 2] [2 0 1]
-                 [1 3 2 3] [1 3 0 2] [1 3 0 1]
-                 [2 3 0 2] [2 3 0 1]
-                 [0 2 0 1])))))
+          ([3 3] [3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
+                 [2 2] [2 1 3] [2 2 3] [2 0 2] [2 0 1]
+                 [1 3 1 3] [1 3 2 3] [1 3 0 2] [1 3 0 1]
+                 [2 3 2 3] [2 3 0 2] [2 3 0 1]
+                 [0 2 0 2] [0 2 0 1]
+                 [0 1 0 1])))))
 
 
 (defn test-process-line []
   (is (process-line debug-first-line)
-      2))
+      10))
 
+(def a "a")
+(def b "b")
+(def c "c")
+(def d "d")
 
 (defn test-combine-buttons-1 []
-  (is  (combine-buttons [["a"] ["b"] ["c"]] 1)
-       '((["a"] ["b"] ["c"]))))
+  (is  (combine-buttons [[a] [b] [c]] 1)
+       [[[a] [b] [c]]]))
 
 (defn test-combine-buttons-2 []
-  (is (combine-buttons [["a"] ["b"] ["c"]] 2)
-      '((["a"] ["b"] ["c"])
-        (["a" "b"] ["a" "c"] ["b" "c"]))))
+  (is (combine-buttons [[a] [b] [c]] 2)
+      [[[a] [b] [c]]
+       [[a a] [a b] [a c] [b b] [b c] [c c]]]))
 
 (defn test-combine-buttons-3-simpler []
-  (is (combine-buttons [["a"] ["b"] ["c"]] 3)
-      '((["a"] ["b"] ["c"])
-        (["a" "b"] ["a" "c"] ["b" "c"])
-        (["a" "b" "c"]))))
+  (is (combine-buttons [[a] [b] [c]] 3)
+      [[[a] [b] [c]]
+       [[a a] [a b] [a c] [b b] [b c] [c c]]
+       [[a a a] [a a b] [a a c] [a b b] [a b c] [a c c]
+        [b b b] [b b c] [b c c] [c c c]]]))
 
 (defn test-combine-buttons-3 []
-  (is (combine-buttons [["a"] ["b"] ["c"] ["d"]] 3)
-      '((["a"] ["b"] ["c"] ["d"])
-        (["a" "b"] ["a" "c"] ["a" "d"]
-                   ["b" "c"] ["b" "d"] ["c" "d"])
-        (["a" "b" "c"] ["a" "b" "d"] ["a" "c" "d"] ["b" "c" "d"]))))
+  (is (combine-buttons [[a] [b] [c] [d]] 3)
+      [[[a] [b] [c] [d]]
+       [[a a] [a b] [a c] [a d] [b b] [b c] [b d] [c c] [c d] [d d]]
+       [[a a a] [a a b] [a a c] [a a d] [a b b] [a b c] [a b d] [a c c] [a c d] [a d d]
+        [b b b] [b b c] [b b d] [b c c] [b c d] [b d d] [c c c] [c c d] [c d d] [d d d]]]))
 
 
-(defn test-combine-buttons-4 []
-  (is (combine-buttons [["a"] ["b"] ["c"] ["d"]] 4)
-      '((["a"] ["b"] ["c"] ["d"])
-        (["a" "b"] ["a" "c"] ["a" "d"] ["b" "c"] ["b" "d"] ["c" "d"])
-        (["a" "b" "c"] ["a" "b" "d"] ["a" "c" "d"] ["b" "c" "d"])
-        (["a" "b" "c" "d"]))))
-
-
-(defn test-combine-buttons-5
+(defn test-combine-buttons-4
   "The only combine-buttons test which actually has vec as input"
   []
   (is (combine-buttons [[0 1] [2] [3 4]] 3)
       '(([0 1] [2] [3 4])
-        ([0 1 2] [0 1 3 4] [2 3 4])
-        ([0 1 2 3 4]))))
+        ([0 1 0 1] [0 1 2] [0 1 3 4] [2 2] [2 3 4] [3 4 3 4])
+        ([0 1 0 1 0 1] [0 1 0 1 2] [0 1 0 1 3 4] [0 1 2 2] [0 1 2 3 4] [0 1 3 4 3 4]
+                       [2 2 2] [2 2 3 4] [2 3 4 3 4] [3 4 3 4 3 4]))))
 
 
 (defn test-count-digits-in-vec-1 []
@@ -225,11 +225,11 @@
 
 (defn test-evaluate-buttons-2 []
   (is (evaluate-buttons [0 0 1 1 1 2] 5)
-      [0 1 1 0 0]))
+      [2 3 1 0 0]))
 
 (defn test-evaluate-buttons-3 []
   (is (evaluate-buttons [0 0 0 1 1 1 2] 3)
-      [1 1 1]))
+      [3 3 1]))
 
 
 (defn run-debug []
@@ -243,7 +243,6 @@
   (test-combine-buttons-3-simpler)
   (test-combine-buttons-3)
   (test-combine-buttons-4)
-  (test-combine-buttons-5)
   (test-count-digits-in-vec-1)
   (test-count-digits-in-vec-2)
   (test-count-digits-in-vec-3)
@@ -254,7 +253,7 @@
   )
 
 
-;; (run-debug)
+(run-debug)
 
 ;; ------------------------------------------------------------
 ;; File processing
@@ -278,7 +277,7 @@
   (is (crack-the-code (input test-file) true)
       38))
 
-(test-sample-data)
+;; (test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

@@ -89,39 +89,27 @@
 
 (defn evaluate-buttons
   "Convert buttons to the lights they turn on
-   [ 1 1 4 0 2 0 0 ] -> [ 1 0 1 0 1 ]
+   [ 1 1 4 0 2 0 0 ] -> [ 3 2 1 0 1 ]
    "
   [buttons max-digit]
-  (map #(mod (count-digits-in-vec buttons %) 2)
+  (map #(count-digits-in-vec buttons %)
        (range max-digit)))
 
 
-;; Abandoned function - I decided to stick to a simpler vector of 0 and 1s
-;; This was converting the array to a long
-;; (defn convert-light
-;; [lights]
-;;   (let [rev-lights (reverse lights)]
-;;     (reduce (fn [acc idx]
-;;               (let [light (nth rev-lights idx)]
-;;                 (+ acc (* light (Math/pow 10 idx)))))
-;;             0
-;;             (range (count lights)))))
-
-
-(defn match-lights? [lights buttons]
-  (= lights (evaluate-buttons buttons (count lights))))
+(defn match-joltages? [joltages buttons]
+  (= joltages (evaluate-buttons buttons (count joltages))))
 
 
 ;; "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
 ;; [[0 1 1 0] [[3] [2] [1 3] [2 3] [0 2] [0 1]] [3 5 4 7]]]
 ;; light - buttons - joltage
 (defn process-line [line]
-  (let [[lights buttons _] (parse-line line)
-        buttons-combinations (combine-buttons buttons (count buttons))
+  (let [[_ buttons joltages] (parse-line line)
+        buttons-combinations (combine-buttons buttons (max joltages))
         result
         (reduce
          (fn [idx buttons-combinations]
-           (if (some #(match-lights? lights %) buttons-combinations)
+           (if (some #(match-joltages? joltages %) buttons-combinations)
              (reduced idx)
              (inc idx)))
          1

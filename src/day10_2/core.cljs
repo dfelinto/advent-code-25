@@ -1,5 +1,5 @@
 
-(ns day10.core
+(ns day10-2.core
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]))
@@ -288,18 +288,18 @@
 
 (defn test-sample-data []
   (is (crack-the-code (input test-file) true)
-      7))
+      38))
 
-;; (test-sample-data)
+(test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main
 ;; ------------------------------------------------------------
 
 (defn main []
-  (time (println "Result for day 10:" (crack-the-code (input input-file)))))
+  (time (println "Result for day 10.2:" (crack-the-code (input input-file)))))
 
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-(main)
+;; (main)

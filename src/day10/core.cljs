@@ -116,24 +116,17 @@
 ;; [[0 1 1 0] [[3] [2] [1 3] [2 3] [0 2] [0 1]] [3 5 4 7]]]
 ;; light - buttons - joltage
 (defn process-line [line]
-  ;; (println "line" line)
   (let [[lights buttons _] (parse-line line)
-        buttons-combinations (combine-buttons buttons (count buttons))]
-
-    (reduce
-     (fn [idx buttons-combinations]
-       (if (some #(match-lights? lights %) buttons-combinations)
-         idx
-         (inc idx)))
-     1
-     buttons-combinations)))
-
-
-;; TODO remove even pairs of the same value (not needed, but I probably should)
-;; TODO Use the buttons to turn on the lights
-;; TODO::: something seems to be be working for the real data
-;; funny enough my 1:1 test works. So it must be the data type, some () vs []
-;; NEED to check the flatten function and the prev. one
+        buttons-combinations (combine-buttons buttons (count buttons))
+        result
+        (reduce
+         (fn [idx buttons-combinations]
+           (if (some #(match-lights? lights %) buttons-combinations)
+             (reduced idx)
+             (inc idx)))
+         1
+         buttons-combinations)]
+    result))
 
 
 (defn crack-the-code
@@ -176,6 +169,11 @@
                  [1 3 2 3] [1 3 0 2] [1 3 0 1]
                  [2 3 0 2] [2 3 0 1]
                  [0 2 0 1])))))
+
+
+(defn test-process-line []
+  (is (process-line debug-first-line)
+      2))
 
 
 (defn test-combine-buttons-1 []
@@ -247,6 +245,7 @@
 
 (defn run-debug []
   (test-parse-line)
+  (test-process-line)
   (test-combine-buttons-data-1)
   (test-combine-buttons-data-2)
   (test-combine-buttons-data-2-plus)
@@ -287,9 +286,10 @@
 ;; ------------------------------------------------------------
 
 (defn test-sample-data []
-  (is 7 (crack-the-code (input test-file) true)))
+  (is (crack-the-code (input test-file) true)
+      7))
 
-;; (test-sample-data)
+(test-sample-data)
 
 ;; ------------------------------------------------------------
 ;; Main

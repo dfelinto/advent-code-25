@@ -39,13 +39,13 @@
 (defn flatten-buttons
   "Flatten the sequence, while preserving the vecs which were the leaves"
   [buttons]
-  (mapcat #(mapcat identity %) buttons))
-;; behold my version using nested reduce:
+  (map #(mapcat identity %) buttons))
 ;; (reduce (fn [acc n]
-;;           (concat
+;;           (conj
 ;;            acc
 ;;            (reduce (fn [acc i] (concat acc i)) [] n)))
 ;;         [] buttons))
+
 
 (defn combine-buttons
   "Create all possible combinations between the buttons to a maximum of `n-max` buttons together"
@@ -116,7 +116,7 @@
 ;; [[0 1 1 0] [[3] [2] [1 3] [2 3] [0 2] [0 1]] [3 5 4 7]]]
 ;; light - buttons - joltage
 (defn process-line [line]
-  (println "line" line)
+  ;; (println "line" line)
   (let [[lights buttons _] (parse-line line)
         buttons-combinations (combine-buttons buttons (count buttons))]
 
@@ -155,70 +155,67 @@
     (is expected (parse-line debug-first-line))))
 
 (defn test-combine-buttons-data-1 []
-  (is (combine-buttons debug-lights 1) debug-lights))
+  (is (combine-buttons debug-lights 1) [debug-lights]))
 
 (defn test-combine-buttons-data-2 []
   (is (combine-buttons debug-lights 2)
-      '([3] [2] [1 3] [2 3] [0 2] [0 1]
-            [3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
-            [2 1 3] [2 2 3] [2 0 2] [2 0 1]
-            [1 3 2 3] [1 3 0 2] [1 3 0 1]
-            [2 3 0 2] [2 3 0 1]
-            [0 2 0 1])))
+      '(([3] [2] [1 3] [2 3] [0 2] [0 1])
+        ([3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
+               [2 1 3] [2 2 3] [2 0 2] [2 0 1]
+               [1 3 2 3] [1 3 0 2] [1 3 0 1]
+               [2 3 0 2] [2 3 0 1]
+               [0 2 0 1]))))
 
 
 (defn test-combine-buttons-data-2-plus []
-  (let [[_ buttons _] (parse-line debug-first-line)
-        ;; vbuttons (mapv vec buttons)
-        ]
+  (let [[_ buttons _] (parse-line debug-first-line)]
     (is (combine-buttons buttons 2)
-        '([3] [2] [1 3] [2 3] [0 2] [0 1]
-              [3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
-              [2 1 3] [2 2 3] [2 0 2] [2 0 1]
-              [1 3 2 3] [1 3 0 2] [1 3 0 1]
-              [2 3 0 2] [2 3 0 1]
-              [0 2 0 1]))))
+        '(([3] [2] [1 3] [2 3] [0 2] [0 1])
+          ([3 2] [3 1 3] [3 2 3] [3 0 2] [3 0 1]
+                 [2 1 3] [2 2 3] [2 0 2] [2 0 1]
+                 [1 3 2 3] [1 3 0 2] [1 3 0 1]
+                 [2 3 0 2] [2 3 0 1]
+                 [0 2 0 1])))))
 
 
 (defn test-combine-buttons-1 []
   (is  (combine-buttons [["a"] ["b"] ["c"]] 1)
-       '(["a"] ["b"] ["c"])))
+       '((["a"] ["b"] ["c"]))))
 
 (defn test-combine-buttons-2 []
   (is (combine-buttons [["a"] ["b"] ["c"]] 2)
-      '(["a"] ["b"] ["c"]
-              ["a" "b"] ["a" "c"] ["b" "c"])))
+      '((["a"] ["b"] ["c"])
+        (["a" "b"] ["a" "c"] ["b" "c"]))))
 
 (defn test-combine-buttons-3-simpler []
   (is (combine-buttons [["a"] ["b"] ["c"]] 3)
-      '(["a"] ["b"] ["c"]
-              ["a" "b"] ["a" "c"]
-              ["b" "c"]
-              ["a" "b" "c"])))
+      '((["a"] ["b"] ["c"])
+        (["a" "b"] ["a" "c"] ["b" "c"])
+        (["a" "b" "c"]))))
 
 (defn test-combine-buttons-3 []
   (is (combine-buttons [["a"] ["b"] ["c"] ["d"]] 3)
-      '(["a"] ["b"] ["c"] ["d"]
-              ["a" "b"] ["a" "c"] ["a" "d"]
-              ["b" "c"] ["b" "d"] ["c" "d"]
-              ["a" "b" "c"] ["a" "b" "d"] ["a" "c" "d"] ["b" "c" "d"])))
+      '((["a"] ["b"] ["c"] ["d"])
+        (["a" "b"] ["a" "c"] ["a" "d"]
+                   ["b" "c"] ["b" "d"] ["c" "d"])
+        (["a" "b" "c"] ["a" "b" "d"] ["a" "c" "d"] ["b" "c" "d"]))))
 
 
 (defn test-combine-buttons-4 []
   (is (combine-buttons [["a"] ["b"] ["c"] ["d"]] 4)
-      '(["a"] ["b"] ["c"] ["d"]
-              ["a" "b"] ["a" "c"] ["a" "d"] ["b" "c"] ["b" "d"] ["c" "d"]
-              ["a" "b" "c"] ["a" "b" "d"] ["a" "c" "d"] ["b" "c" "d"]
-              ["a" "b" "c" "d"])))
+      '((["a"] ["b"] ["c"] ["d"])
+        (["a" "b"] ["a" "c"] ["a" "d"] ["b" "c"] ["b" "d"] ["c" "d"])
+        (["a" "b" "c"] ["a" "b" "d"] ["a" "c" "d"] ["b" "c" "d"])
+        (["a" "b" "c" "d"]))))
 
 
 (defn test-combine-buttons-5
   "The only combine-buttons test which actually has vec as input"
   []
   (is (combine-buttons [[0 1] [2] [3 4]] 3)
-      '([0 1] [2] [3 4]
-              [0 1 2] [0 1 3 4] [2 3 4]
-              [0 1 2 3 4])))
+      '(([0 1] [2] [3 4])
+        ([0 1 2] [0 1 3 4] [2 3 4])
+        ([0 1 2 3 4]))))
 
 
 (defn test-count-digits-in-vec-1 []

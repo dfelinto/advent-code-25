@@ -61,7 +61,7 @@
              (let [head (get buttons idx)
                    tail (->>
                          prev
-                         (drop (inc idx))
+                         (drop idx)
                          (reduce concat))]
                (map #(concat head  %) tail))))))
       [(for [button buttons] [button])]

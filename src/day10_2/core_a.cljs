@@ -1,5 +1,5 @@
 
-(ns day10-2.core
+(ns day10-2.core-a-1
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]))

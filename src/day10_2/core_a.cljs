@@ -1,4 +1,7 @@
 
+;; Although this solution is technically sound
+;; it overflows in my computer.
+
 (ns day10-2.core-a-1
   (:require
    [babashka.fs :as fs]

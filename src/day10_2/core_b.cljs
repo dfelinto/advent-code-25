@@ -203,15 +203,26 @@
   (is (crack-the-code ["[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"] true)
       11))
 
-(time (test-single-line-3))
+
+;; (time (test-single-line-3))
+
+
+;; This line is failing miserably 20000002
+;; It probably holds the key to what is wrong, given how simple that is.
+;; "[.#.#] (0,1,2) (1,3) {9,18,9,9}"
+(defn test-single-line-4 []
+  (is (crack-the-code ["[.#.#] (0,1,2) (1,3) {9,18,9,9}"] true)
+      18))
+
+(time (test-single-line-4))
 
 ;; Reference line/value from the internet
 ;; 19, 199, 2, 6, 19, 3.
-(defn test-single-line-4 []
+(defn test-single-line-5 []
   (is (crack-the-code ["[..##.#] (0,1,2,5) (0,1,5) (0,5) (2,4) (2,3,5) (0,3,4) {223,218,44,22,9,239}"] true)
       248))
 
-;; (time (test-single-line-4))
+;; (time (test-single-line-5))
 
 
 ;; ------------------------------------------------------------

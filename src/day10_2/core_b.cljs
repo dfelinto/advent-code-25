@@ -58,8 +58,9 @@
    [[[2] [2 4]] [[3] [5 2 7]]] ->  [ {:n 0 :bts [2]} {:n 0 :bts [2 4]} {:n 1 :bts [3]}  {:n 1 :bts [5 2 7]} ]"
   [buttons]
   (let [mapped
-        (for [n (range (count buttons))]
-          (let [buttons-n (nth buttons n)]
+        ;; n is 1-based
+        (for [n (range 1 (inc (count buttons)))]
+          (let [buttons-n (nth buttons (dec n))]
             (mapv #(assoc {} :n n :bts %) buttons-n)))]
     (flatten-buttons mapped)))
 
@@ -152,9 +153,10 @@
                 (reduce
                  (fn [acc potential-buttons]
                    (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
+                         _ (println potential-buttons)
                          half-joltage (mapv #(if (zero? %) 0 (/ % 2)) joltages')
-                         branch (get-min' 0 buttons half-joltage)]
-                     (conj acc (+ total (* 2 branch) (inc (:n potential-buttons))))))
+                         branch (get-min' buttons half-joltage)]
+                     (conj acc (+ total (* 2 branch) (:n potential-buttons)))))
                  []
                  button-matches))
 

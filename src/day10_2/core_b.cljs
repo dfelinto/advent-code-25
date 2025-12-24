@@ -151,8 +151,11 @@
      (some neg-int? joltages)
      2000000
 
-     (every? #(even? %) joltages)
-     (* 2 (get-min' buttons (half-joltage-safe joltages) verbose?))
+     ;; we need two forks in this case.
+     ;; one where we still look for patterns.
+     ;; and another where we split in half
+     ;; ;;  (every? #(even? %) joltages)
+     ;;  (* 2 (get-min' buttons (half-joltage-safe joltages) verbose?))
 
      :else
      (let [pattern (get-pattern-from-values' joltages)
@@ -166,8 +169,12 @@
 
            _ (when verbose? (println "flatten-with-count" button-matches))
            button-matches (filter #(match-pattern? pattern (:bts %)) button-matches)
-           _ (when verbose? (println "buttons-matches" button-matches))]
+           _ (when verbose? (println "buttons-matches" button-matches))
 
+           ;; There are cases where we need to go on both paths, to the split, but
+           ;; we need to try the odds as well.
+           is-all-even? (every? #(even? %) joltages)
+           initial (if is-all-even? [(* 2 (get-min' buttons (half-joltage-safe joltages) verbose?))] [])]
        (cond
          (not-empty? button-matches)
          (->> button-matches
@@ -180,19 +187,15 @@
                        _ (when verbose? (println "half-joltage" half-joltage))
                        branch (get-min' buttons half-joltage verbose?)]
                    (conj acc (+ (* 2 branch) (:n potential-buttons)))))
-               [])
+               initial)
               (apply min))
 
          ;; if any of the joltages is odd, then it is a dead-end
          (some #(odd? %) joltages)
-         3333333
+         7777777777777
 
          :else
-         ;; deadlock
-         ;; actually it can also mean that the numbers were simply multiples of 4
-         77777777777
-         ;; (* 2 (get-min' buttons (half-joltage-safe joltages)))
-         )))))
+         (* 2 (get-min' buttons (half-joltage-safe joltages))))))))
 
 
 ;; 3 2 7
@@ -221,7 +224,7 @@
 (defn crack-the-code
   ([lines] (crack-the-code lines false))
   ([lines verbose?]
-   (reduce + (map (partial #(process-line % verbose?)) lines))))
+   (reduce + (map (partial #(process-line % false)) lines))))
 
 
 ;; ------------------------------------------------------------
@@ -233,20 +236,20 @@
   (is (crack-the-code ["[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"] true)
       10))
 
-;; (time (test-single-line-1))
+(time (test-single-line-1))
 
 
 (defn test-single-line-3 []
   (is (crack-the-code ["[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"] true)
       11))
 
-;; (time (test-single-line-3))
+(time (test-single-line-3))
 
 (defn test-single-line-3-b []
   (is (crack-the-code ["[.###.#] (0,1) (0) (1) {2,2}"] true)
       2))
 
-;; (time (test-single-line-3-b))
+(time (test-single-line-3-b))
 
 ;; How come this works (if I manually remove the (0,3,4))
 ;; but with it somehow it fails?
@@ -255,7 +258,7 @@
   (is (crack-the-code ["[.###.#] (0,1,2,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"] true)
       11))
 
-;; (time (test-single-line-3-b))
+(time (test-single-line-3-c))
 
 
 ;; This line is failing miserably 20000002
@@ -265,7 +268,7 @@
   (is (crack-the-code ["[.#.#] (0,1,2) (1,3) {9,18,9,9}"] true)
       18))
 
-;; (time (test-single-line-4))
+(time (test-single-line-4))
 
 ;; Reference line/value from the internet
 ;; 19, 199, 2, 6, 19, 3.
@@ -273,7 +276,7 @@
   (is (crack-the-code ["[..##.#] (0,1,2,5) (0,1,5) (0,5) (2,4) (2,3,5) (0,3,4) {223,218,44,22,9,239}"] true)
       248))
 
-;; (time (test-single-line-5))
+(time (test-single-line-5))
 
 
 (defn test-single-line-6 []
@@ -285,7 +288,7 @@
 ;; b = 4
 ;; c = 14
 
-;; (test-single-line-6)
+(test-single-line-6)
 
 (defn test-single-line-7 []
   (is (crack-the-code ["[.####] (1,2) (0,2) (0,1) {4,4,4}"] true)
@@ -320,7 +323,7 @@
   (is (crack-the-code (input test-file) true)
       33))
 
-;; (time (test-sample-data))
+(time (test-sample-data))
 
 
 ;; ------------------------------------------------------------
@@ -333,4 +336,4 @@
 
 ;; There is no way to process the output of (run-tests) to know if it fails.
 ;; so we keep (main) manually commented out until all tests pass
-;; (main)
+(main)

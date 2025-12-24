@@ -126,9 +126,14 @@
 (def combine-buttons' (memoize combine-buttons))
 
 
+(defn half-joltage-safe [joltages]
+  (mapv #(if (zero? %) 0 (/ % 2)) joltages))
+
+
 (defn get-min
   "Always return the smallest branch"
   [buttons joltages]
+  ;; (println "joltages" joltages)
   (cond
     (every? zero? joltages)
     0
@@ -147,24 +152,33 @@
                           buttons
                           (combine-buttons')
                           (flatten-with-count)
-                          (filter #(match-pattern? pattern (:bts %))))]
+                          (filter #(match-pattern? pattern (:bts %))))
+          ;; _ (println "buttons-matches" button-matches)
+          ]
 
-      (if (not-empty? button-matches)
+      (cond
+        (not-empty? button-matches)
         (->> button-matches
              (reduce
               (fn [acc potential-buttons]
                 (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
                       ;; _ (println potential-buttons)
                       ;; _ (println "joltages'" joltages')
-                      half-joltage (mapv #(if (zero? %) 0 (/ % 2)) joltages')
+                      half-joltage (half-joltage-safe joltages')
                       ;; _ (println "half-joltage" half-joltage)
                       branch (get-min' buttons half-joltage)]
                   (conj acc (+ (* 2 branch) (:n potential-buttons)))))
               [])
              (apply min))
 
+        ;; if any of the joltages is odd, then it is a dead-end
+        (some #(odd? %) joltages)
+        3333333
+
+        :else
         ;; If empty it means there was no match in the branch
-        1000000))))
+        ;; actually it can also mean that the numbers were simply multiples of 4
+        (* 2 (get-min' buttons (half-joltage-safe joltages)))))))
 
 
 
@@ -174,7 +188,7 @@
 (defn process-line
   ([line] (process-line line false))
   ([line verbose?]
-   ;;  (println line)
+   (println line)
    (let [[_ buttons joltages] (parse-line line)
          total (get-min buttons joltages)]
      (when verbose? (println total ":" line))
@@ -203,8 +217,28 @@
   (is (crack-the-code ["[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"] true)
       11))
 
-
 ;; (time (test-single-line-3))
+
+(defn test-single-line-3-b []
+  (is (crack-the-code ["[.###.#] (0,1) (0) (1) {2,2}"] true)
+      2))
+
+(time (test-single-line-3-b))
+
+;; How come this works (if I manually remove the (0,3,4))
+;; but with it somehow it fails?
+
+(defn test-single-line-3-c []
+  (is (crack-the-code ["[.###.#] (0,1,2,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"] true)
+      11))
+
+;; (time (test-single-line-3-b))
+
+;; (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
+;; a b c d
+;; 5 0 5 1
+
+
 
 
 ;; This line is failing miserably 20000002
@@ -214,7 +248,7 @@
   (is (crack-the-code ["[.#.#] (0,1,2) (1,3) {9,18,9,9}"] true)
       18))
 
-(time (test-single-line-4))
+;; (time (test-single-line-4))
 
 ;; Reference line/value from the internet
 ;; 19, 199, 2, 6, 19, 3.

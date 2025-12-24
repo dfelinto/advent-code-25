@@ -36,7 +36,7 @@ I've been using AI to navigate my way around the language, mostly for syntax (le
 
 More recently I found an even better resource: [Christian Mangelsdorf's X account](https://x.com/ch_mangelsdorf).
 
-The guy is brilliant, and his one-page solutions are so elegant. So now after I'm done with a challenge I go to hsi feed to learn how to do it "the right way".
+The guy is brilliant, and his one-page solutions are so elegant. So now, after I'm done with a challenge, I go to his feed to learn how to do it "the right way".
 
 I'll save his screenshots here later so they don't get lost. Thank you random generous internet stranger :)
 

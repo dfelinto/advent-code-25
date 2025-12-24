@@ -99,7 +99,11 @@
    [ [1 3] [0 2] [0] [5] ] -> [ 0 1 1 0 1 ]
    "
   [buttons max-digit]
-  (get-pattern-from-values (evaluate-buttons-total' buttons max-digit)))
+  (let [pattern
+        (get-pattern-from-values (evaluate-buttons-total' buttons max-digit))
+        ;; _  (println "evaluate-buttons" buttons max-digit pattern)
+        ]
+    pattern))
 
 
 (defn match-pattern? [pattern buttons]
@@ -137,60 +141,67 @@
 
 (defn get-min
   "Always return the smallest branch"
-  [buttons joltages]
-  ;; (println "joltages" joltages)
-  (cond
-    (every? zero? joltages)
-    0
+  ([buttons joltages] (get-min buttons joltages false))
+  ([buttons joltages verbose?]
+   (when verbose? (println "joltages" joltages "buttons" buttons))
+   (cond
+     (every? zero? joltages)
+     0
 
-    (some neg-int? joltages)
-    2000000
+     (some neg-int? joltages)
+     2000000
 
-    ;;  ;; This is the maximum amount of clicks it can possibly need
-    ;;  (> total (long (/ (apply + joltages) (apply min (mapv count buttons)))))
-    ;;  3000000
+     (every? #(even? %) joltages)
+     (* 2 (get-min' buttons (half-joltage-safe joltages) verbose?))
 
-    (every? #(even? %) joltages)
-    (* 2 (get-min' buttons (half-joltage-safe joltages)))
+     :else
+     (let [pattern (get-pattern-from-values' joltages)
+           _  (when verbose? (println  "pattern" pattern))
+           button-matches (->>
+                           buttons
+                           (combine-buttons')
+                           (flatten-with-count')
+                           ;;  (filter #(match-pattern? pattern (:bts %))))]
+                           )
 
-    :else
-    (let [pattern (get-pattern-from-values' joltages)
-          ;; _  (println joltages)
-          button-matches (->>
-                          buttons
-                          (combine-buttons')
-                          (flatten-with-count')
-                          (filter #(match-pattern? pattern (:bts %))))]
+           _ (when verbose? (println "flatten-with-count" button-matches))
+           button-matches (filter #(match-pattern? pattern (:bts %)) button-matches)
+           _ (when verbose? (println "buttons-matches" button-matches))]
 
-      ;; _ (println "flatten-with-count" button-matches)
-      ;; button-matches (filter #(match-pattern? pattern (:bts %)) button-matches)
-      ;; _ (println "buttons-matches" button-matches)]
+       (cond
+         (not-empty? button-matches)
+         (->> button-matches
+              (reduce
+               (fn [acc potential-buttons]
+                 (let [joltages' (mapv - joltages (evaluate-buttons-total' (:bts potential-buttons) (count joltages)))
+                       _ (when verbose? (println potential-buttons))
+                       _ (when verbose? (println "joltages'" joltages'))
+                       half-joltage (half-joltage-safe joltages')
+                       _ (when verbose? (println "half-joltage" half-joltage))
+                       branch (get-min' buttons half-joltage verbose?)]
+                   (conj acc (+ (* 2 branch) (:n potential-buttons)))))
+               [])
+              (apply min))
 
-      (cond
-        (not-empty? button-matches)
-        (->> button-matches
-             (reduce
-              (fn [acc potential-buttons]
-                (let [joltages' (mapv - joltages (evaluate-buttons-total' (:bts potential-buttons) (count joltages)))
-                      ;; _ (println potential-buttons)
-                      ;; _ (println "joltages'" joltages')
-                      half-joltage (half-joltage-safe joltages')
-                      ;; _ (println "half-joltage" half-joltage)
-                      branch (get-min' buttons half-joltage)]
-                  (conj acc (+ (* 2 branch) (:n potential-buttons)))))
-              [])
-             (apply min))
+         ;; if any of the joltages is odd, then it is a dead-end
+         (some #(odd? %) joltages)
+         3333333
 
-        ;; if any of the joltages is odd, then it is a dead-end
-        (some #(odd? %) joltages)
-        3333333
+         :else
+         ;; deadlock
+         ;; actually it can also mean that the numbers were simply multiples of 4
+         77777777777
+         ;; (* 2 (get-min' buttons (half-joltage-safe joltages)))
+         )))))
 
-        :else
-        ;; deadlock
-        ;; actually it can also mean that the numbers were simply multiples of 4
-        77777777777
-        ;; (* 2 (get-min' buttons (half-joltage-safe joltages)))
-        ))))
+
+;; 3 2 7
+;; (1,2) (0,2) (0,1) {9,10,5}
+;; (0 2) (0 1 1 2)
+;; |
+;; 8 10 4
+;; 4 5 2
+
 
 
 
@@ -200,9 +211,9 @@
 (defn process-line
   ([line] (process-line line false))
   ([line verbose?]
-   (println line)
+   (when verbose? (println line))
    (let [[_ buttons joltages] (parse-line line)
-         total (get-min buttons joltages)]
+         total (get-min buttons joltages verbose?)]
      (when verbose? (println total ":" line))
      total)))
 
@@ -235,7 +246,7 @@
   (is (crack-the-code ["[.###.#] (0,1) (0) (1) {2,2}"] true)
       2))
 
-(time (test-single-line-3-b))
+;; (time (test-single-line-3-b))
 
 ;; How come this works (if I manually remove the (0,3,4))
 ;; but with it somehow it fails?
@@ -245,12 +256,6 @@
       11))
 
 ;; (time (test-single-line-3-b))
-
-;; (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
-;; a b c d
-;; 5 0 5 1
-
-
 
 
 ;; This line is failing miserably 20000002
@@ -269,6 +274,28 @@
       248))
 
 ;; (time (test-single-line-5))
+
+
+(defn test-single-line-6 []
+  (is (crack-the-code ["[.####] (1,2,3,4) (0,2,4) (0,1,3) {18,20,10,20,10}"] true)
+      24))
+
+
+;; a = 6
+;; b = 4
+;; c = 14
+
+;; (test-single-line-6)
+
+(defn test-single-line-7 []
+  (is (crack-the-code ["[.####] (1,2) (0,2) (0,1) {4,4,4}"] true)
+      6))
+
+;; a = 2
+;; b = 2
+;; c = 2
+
+(test-single-line-7)
 
 
 ;; ------------------------------------------------------------

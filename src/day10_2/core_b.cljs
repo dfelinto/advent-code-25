@@ -34,19 +34,6 @@
      (mapv parse-long (str/split joltage #","))]))
 
 
-;; ```
-;; find the odd buttons
-;; for each one of them, create a new branch:
-;;   +1
-;;   find the off buttons
-;;     for each one of them, create a new branch:
-;;       +1
-;; else
-;;   divide J / 2
-;;   +2
-;;   find the odd buttons
-;; ```
-
 (def not-empty? (complement empty?))
 
 
@@ -54,33 +41,125 @@
 (def get-min' (memoize (fn [& args] (apply get-min args))))
 
 
+(defn flatten-buttons
+  "Flatten the sequence completely"
+  [buttons]
+  (mapcat #(identity %) buttons))
+
+
+(defn flatten-buttons-per-n
+  "Flatten the sequence, while preserving the vecs which were the leaves"
+  [buttons]
+  (map #(flatten-buttons %) buttons))
+
+
+(defn flatten-with-count
+  "Break down the buttons into an array of {}, indexed with n (number of pressed buttons)
+   [[[2] [2 4]] [[3] [5 2 7]]] ->  [ {:n 0 :bts [2]} {:n 0 :bts [2 4]} {:n 1 :bts [3]}  {:n 1 :bts [5 2 7]} ]"
+  [buttons]
+  (let [mapped
+        (for [n (range (count buttons))]
+          (let [buttons-n (nth buttons n)]
+            (mapv #(assoc {} :n n :bts %) buttons-n)))]
+    (flatten-buttons mapped)))
+
+
+(defn get-pattern-from-values
+  "[3 5 4 7] -> [ true true false true ]"
+  [values]
+  (mapv #(odd? %) values))
+;; (def get-pattern-from-joltages' (memoize get-pattern-from-joltages))
+
+
+(defn count-digits-in-vec
+  "Return how many of a given digit there is in a vec."
+  [vec digit]
+  (count (filter #(= % digit) vec)))
+
+
+(defn evaluate-buttons-total
+  "Convert buttons to the pattern (lights) they turn on with count
+   [ [1 3] [0 2] [0] [5] ] -> [ 2 1 1 0 1 ]
+   "
+  [buttons max-digit]
+  ;; (let [fl-buttons (flatten-buttons buttons)
+  ;;       _ (println fl-buttons)])
+  (mapv #(count-digits-in-vec buttons %)
+        (range max-digit)))
+
+
+(defn evaluate-buttons
+  "Convert buttons to the pattern (lights) they turn on
+   [ [1 3] [0 2] [0] [5] ] -> [ 0 1 1 0 1 ]
+   "
+  [buttons max-digit]
+  (get-pattern-from-values (evaluate-buttons-total buttons max-digit)))
+
+
+(defn match-pattern? [pattern buttons]
+  (= pattern (evaluate-buttons buttons (count pattern))))
+
+
+(defn combine-buttons
+  "Create all possible combinations between the buttons to a maximum of `n-max` buttons together"
+  [buttons]
+  (let [buttons-len (count buttons)]
+    (flatten-buttons-per-n
+     (reduce
+      (fn [acc n]
+        (let [prev (last acc)]
+          (conj
+           acc
+           (for [idx (range (- buttons-len n))]
+             (let [head (get buttons idx)
+                   tail (->>
+                         prev
+                         (drop (inc idx))
+                         (reduce concat))]
+               (map #(concat head  %) tail))))))
+      [(for [button buttons] [button])]
+      (range 1 buttons-len)))))
+
+(def combine-buttons' (memoize combine-buttons))
+
+
 (defn get-min
   "Always return the smallest branch"
   ([buttons joltages] (get-min' 0 buttons joltages))
   ([total buttons joltages]
-   ;;  (println joltages)
-   (let [odd-buttons (filter (fn [b] (some #(odd? (get joltages %)) b)) buttons)
-         ;;  _ (println "odd-buttons" odd-buttons "joltages" joltages "total" total)
-         ]
-     (cond
-       (some neg-int? joltages)
-       1000000000000000
+   (cond
+     (every? zero? joltages)
+     total
 
-       (every? zero? joltages)
-       total
+     (some neg-int? joltages)
+     2000000
 
-       (not-empty? odd-buttons)
-       (apply min
-              (reduce
-               (fn [acc button]
-                 (let [joltages' (map-indexed (fn [idx j] (if (some #(= idx %) button) (dec j) (identity j))) joltages)]
-                   ;;  (println "new-joltages" joltages' button)
-                   (conj acc (get-min' (inc total) buttons (vec joltages')))))
-               []
-               odd-buttons))
+     ;;  ;; This is the maximum amount of clicks it can possibly need
+     ;;  (> total (long (/ (apply + joltages) (apply min (mapv count buttons)))))
+     ;;  3000000
 
-       :else
-       (+ total (* 2 (get-min' 0 buttons (mapv #(if (zero? %) 0 (/ % 2)) joltages))))))))
+     :else
+     (let [pattern (get-pattern-from-values joltages)
+           ;;  _  (println joltages total)
+           button-matches (->>
+                           buttons
+                           (combine-buttons')
+                           (flatten-with-count)
+                           (filter #(match-pattern? pattern (:bts %))))]
+
+       (if (not-empty? button-matches)
+         (apply min
+                (reduce
+                 (fn [acc potential-buttons]
+                   (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
+                         half-joltage (mapv #(if (zero? %) 0 (/ % 2)) joltages')
+                         branch (get-min' 0 buttons half-joltage)]
+                     (conj acc (+ total (* 2 branch) (inc (:n potential-buttons))))))
+                 []
+                 button-matches))
+
+         ;; If empty it means there was no match in the branch
+         1000000)))))
 
 
 
@@ -90,6 +169,7 @@
 (defn process-line
   ([line] (process-line line false))
   ([line verbose?]
+   ;;  (println line)
    (let [[_ buttons joltages] (parse-line line)
          total (get-min buttons joltages)]
      (when verbose? (println total ":" line))
@@ -113,9 +193,11 @@
 
 (time (test-single-line-1))
 
+;; Reference line/value from the internet
+;; 19, 199, 2, 6, 19, 3.
 (defn test-single-line-2 []
   (is (crack-the-code ["[..##.#] (0,1,2,5) (0,1,5) (0,5) (2,4) (2,3,5) (0,3,4) {223,218,44,22,9,239}"] true)
-      10))
+      248))
 
 (time (test-single-line-2))
 

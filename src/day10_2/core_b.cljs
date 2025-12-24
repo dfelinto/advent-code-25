@@ -150,6 +150,9 @@
     ;;  (> total (long (/ (apply + joltages) (apply min (mapv count buttons)))))
     ;;  3000000
 
+    (every? #(even? %) joltages)
+    (* 2 (get-min' buttons (half-joltage-safe joltages)))
+
     :else
     (let [pattern (get-pattern-from-values' joltages)
           ;; _  (println joltages)
@@ -183,9 +186,11 @@
         3333333
 
         :else
-        ;; If empty it means there was no match in the branch
+        ;; deadlock
         ;; actually it can also mean that the numbers were simply multiples of 4
-        (* 2 (get-min' buttons (half-joltage-safe joltages)))))))
+        77777777777
+        ;; (* 2 (get-min' buttons (half-joltage-safe joltages)))
+        ))))
 
 
 

@@ -142,7 +142,7 @@
 
     :else
     (let [pattern (get-pattern-from-values joltages)
-          _  (println joltages)
+          ;; _  (println joltages)
           button-matches (->>
                           buttons
                           (combine-buttons')
@@ -150,18 +150,18 @@
                           (filter #(match-pattern? pattern (:bts %))))]
 
       (if (not-empty? button-matches)
-        (apply min
-               (reduce
-                (fn [acc potential-buttons]
-                  (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
-                        _ (println potential-buttons)
-                        _ (println "joltages'" joltages')
-                        half-joltage (mapv #(if (zero? %) 0 (/ % 2)) joltages')
-                        _ (println "half-joltage" half-joltage)
-                        branch (get-min' buttons half-joltage)]
-                    (conj acc (+ (* 2 branch) (:n potential-buttons)))))
-                []
-                button-matches))
+        (->> button-matches
+             (reduce
+              (fn [acc potential-buttons]
+                (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
+                      ;; _ (println potential-buttons)
+                      ;; _ (println "joltages'" joltages')
+                      half-joltage (mapv #(if (zero? %) 0 (/ % 2)) joltages')
+                      ;; _ (println "half-joltage" half-joltage)
+                      branch (get-min' buttons half-joltage)]
+                  (conj acc (+ (* 2 branch) (:n potential-buttons)))))
+              [])
+             (apply min))
 
         ;; If empty it means there was no match in the branch
         1000000))))

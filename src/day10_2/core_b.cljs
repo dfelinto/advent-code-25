@@ -64,12 +64,14 @@
             (mapv #(assoc {} :n n :bts (vec %)) buttons-n)))]
     (flatten-buttons mapped)))
 
+(def flatten-with-count' (memoize flatten-with-count))
+
 
 (defn get-pattern-from-values
   "[3 5 4 7] -> [ true true false true ]"
   [values]
   (mapv #(odd? %) values))
-;; (def get-pattern-from-joltages' (memoize get-pattern-from-joltages))
+(def get-pattern-from-values' (memoize get-pattern-from-values))
 
 
 (defn count-digits-in-vec
@@ -89,12 +91,15 @@
         (range max-digit)))
 
 
+(def evaluate-buttons-total' (memoize evaluate-buttons-total))
+
+
 (defn evaluate-buttons
   "Convert buttons to the pattern (lights) they turn on
    [ [1 3] [0 2] [0] [5] ] -> [ 0 1 1 0 1 ]
    "
   [buttons max-digit]
-  (get-pattern-from-values (evaluate-buttons-total buttons max-digit)))
+  (get-pattern-from-values (evaluate-buttons-total' buttons max-digit)))
 
 
 (defn match-pattern? [pattern buttons]
@@ -146,22 +151,24 @@
     ;;  3000000
 
     :else
-    (let [pattern (get-pattern-from-values joltages)
+    (let [pattern (get-pattern-from-values' joltages)
           ;; _  (println joltages)
           button-matches (->>
                           buttons
                           (combine-buttons')
-                          (flatten-with-count)
-                          (filter #(match-pattern? pattern (:bts %))))
-          ;; _ (println "buttons-matches" button-matches)
-          ]
+                          (flatten-with-count')
+                          (filter #(match-pattern? pattern (:bts %))))]
+
+      ;; _ (println "flatten-with-count" button-matches)
+      ;; button-matches (filter #(match-pattern? pattern (:bts %)) button-matches)
+      ;; _ (println "buttons-matches" button-matches)]
 
       (cond
         (not-empty? button-matches)
         (->> button-matches
              (reduce
               (fn [acc potential-buttons]
-                (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
+                (let [joltages' (mapv - joltages (evaluate-buttons-total' (:bts potential-buttons) (count joltages)))
                       ;; _ (println potential-buttons)
                       ;; _ (println "joltages'" joltages')
                       half-joltage (half-joltage-safe joltages')

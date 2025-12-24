@@ -216,7 +216,7 @@
   ([line verbose?]
    (when verbose? (println line))
    (let [[_ buttons joltages] (parse-line line)
-         total (get-min buttons joltages verbose?)]
+         total (get-min buttons joltages)]
      (when verbose? (println total ":" line))
      total)))
 
@@ -224,7 +224,7 @@
 (defn crack-the-code
   ([lines] (crack-the-code lines false))
   ([lines verbose?]
-   (reduce + (map (partial #(process-line % false)) lines))))
+   (reduce + (pmap (partial #(process-line % verbose?)) lines))))
 
 
 ;; ------------------------------------------------------------

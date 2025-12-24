@@ -1,9 +1,10 @@
-;; I didn't manage to do this one by myself
+;; I didn't manage to crack this one completely by myself
+;; (see my overflown attempt at core_a.cljs
 ;;
-;; But I implemented this algorithm:
+;; But I then did succeed in implementing this algorithm:
 ;; https://www.reddit.com/r/adventofcode/comments/1pk87hl/2025_day_10_part_2_bifurcate_your_way_to_victory/
 ;;
-;; That alone was painful enough that I think I deserved my start :)
+;; That alone was painful enough that I think I deserved my star :)
 (ns day10-2.core-b
   (:require
    [babashka.fs :as fs]

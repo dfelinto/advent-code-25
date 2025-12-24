@@ -58,10 +58,10 @@
    [[[2] [2 4]] [[3] [5 2 7]]] ->  [ {:n 0 :bts [2]} {:n 0 :bts [2 4]} {:n 1 :bts [3]}  {:n 1 :bts [5 2 7]} ]"
   [buttons]
   (let [mapped
-        ;; n is 1-based
+        ;; Make n 1-based
         (for [n (range 1 (inc (count buttons)))]
           (let [buttons-n (nth buttons (dec n))]
-            (mapv #(assoc {} :n n :bts %) buttons-n)))]
+            (mapv #(assoc {} :n n :bts (vec %)) buttons-n)))]
     (flatten-buttons mapped)))
 
 
@@ -119,6 +119,8 @@
                          (reduce concat))]
                (map #(concat head  %) tail))))))
       [(for [button buttons] [button])]
+      ;; Begins at range 1, because n=0 is given by the
+      ;; for loop above, which is simply all the initial buttons.
       (range 1 buttons-len)))))
 
 (def combine-buttons' (memoize combine-buttons))
@@ -126,42 +128,43 @@
 
 (defn get-min
   "Always return the smallest branch"
-  ([buttons joltages] (get-min' 0 buttons joltages))
-  ([total buttons joltages]
-   (cond
-     (every? zero? joltages)
-     total
+  [buttons joltages]
+  (cond
+    (every? zero? joltages)
+    0
 
-     (some neg-int? joltages)
-     2000000
+    (some neg-int? joltages)
+    2000000
 
-     ;;  ;; This is the maximum amount of clicks it can possibly need
-     ;;  (> total (long (/ (apply + joltages) (apply min (mapv count buttons)))))
-     ;;  3000000
+    ;;  ;; This is the maximum amount of clicks it can possibly need
+    ;;  (> total (long (/ (apply + joltages) (apply min (mapv count buttons)))))
+    ;;  3000000
 
-     :else
-     (let [pattern (get-pattern-from-values joltages)
-           ;;  _  (println joltages total)
-           button-matches (->>
-                           buttons
-                           (combine-buttons')
-                           (flatten-with-count)
-                           (filter #(match-pattern? pattern (:bts %))))]
+    :else
+    (let [pattern (get-pattern-from-values joltages)
+          _  (println joltages)
+          button-matches (->>
+                          buttons
+                          (combine-buttons')
+                          (flatten-with-count)
+                          (filter #(match-pattern? pattern (:bts %))))]
 
-       (if (not-empty? button-matches)
-         (apply min
-                (reduce
-                 (fn [acc potential-buttons]
-                   (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
-                         _ (println potential-buttons)
-                         half-joltage (mapv #(if (zero? %) 0 (/ % 2)) joltages')
-                         branch (get-min' buttons half-joltage)]
-                     (conj acc (+ total (* 2 branch) (:n potential-buttons)))))
-                 []
-                 button-matches))
+      (if (not-empty? button-matches)
+        (apply min
+               (reduce
+                (fn [acc potential-buttons]
+                  (let [joltages' (mapv - joltages (evaluate-buttons-total (:bts potential-buttons) (count joltages)))
+                        _ (println potential-buttons)
+                        _ (println "joltages'" joltages')
+                        half-joltage (mapv #(if (zero? %) 0 (/ % 2)) joltages')
+                        _ (println "half-joltage" half-joltage)
+                        branch (get-min' buttons half-joltage)]
+                    (conj acc (+ (* 2 branch) (:n potential-buttons)))))
+                []
+                button-matches))
 
-         ;; If empty it means there was no match in the branch
-         1000000)))))
+        ;; If empty it means there was no match in the branch
+        1000000))))
 
 
 
@@ -193,15 +196,22 @@
   (is (crack-the-code ["[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"] true)
       10))
 
-(time (test-single-line-1))
+;; (time (test-single-line-1))
+
+
+(defn test-single-line-3 []
+  (is (crack-the-code ["[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"] true)
+      11))
+
+(time (test-single-line-3))
 
 ;; Reference line/value from the internet
 ;; 19, 199, 2, 6, 19, 3.
-(defn test-single-line-2 []
+(defn test-single-line-4 []
   (is (crack-the-code ["[..##.#] (0,1,2,5) (0,1,5) (0,5) (2,4) (2,3,5) (0,3,4) {223,218,44,22,9,239}"] true)
       248))
 
-(time (test-single-line-2))
+;; (time (test-single-line-4))
 
 
 ;; ------------------------------------------------------------
@@ -226,7 +236,7 @@
   (is (crack-the-code (input test-file) true)
       33))
 
-(time (test-sample-data))
+;; (time (test-sample-data))
 
 
 ;; ------------------------------------------------------------
